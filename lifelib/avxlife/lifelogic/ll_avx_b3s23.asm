@@ -1,0 +1,8 @@
+        "vpand %%xmm8, %%xmm11, %%xmm1 \n\t"
+        "vpxor %%xmm11, %%xmm8, %%xmm8 \n\t"
+        "vpxor %%xmm1, %%xmm9, %%xmm9 \n\t"
+        "vpxor %%xmm9, %%xmm8, %%xmm8 \n\t"
+        "vpor %%xmm10, %%xmm12, %%xmm12 \n\t"
+        "vpxor %%xmm9, %%xmm10, %%xmm10 \n\t"
+        "vpand %%xmm12, %%xmm8, %%xmm8 \n\t"
+        "vpand %%xmm8, %%xmm10, %%xmm10 \n\t"
