@@ -3,6 +3,7 @@
 #include "util.h"
 #include <map>
 #include <string>
+#include <cstdlib>
 #include <iostream>
 #include <sys/time.h>
 using namespace std ;
