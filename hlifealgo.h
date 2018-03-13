@@ -163,6 +163,10 @@ public:
    }
    virtual void setcell(int x, int y) { setcell(x, y, 1) ; }
    virtual void swap() {}
+   virtual void setinc(int i) { lifealgo::setinc(i) ; setIncrement(i) ; }
+   virtual int nextstep() {
+      return nextstep(0, 1) ;
+   }
    virtual int nextstep(int id, int n) {
       if (n != 1) error("! no multithreading") ;
       step() ;

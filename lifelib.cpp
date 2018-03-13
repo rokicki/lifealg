@@ -14,6 +14,9 @@ public:
    virtual int getpopulation() ;
    virtual int nextstep(int, int) ;
    virtual void swap() ;
+   virtual int nextstep() { 
+      return nextstep(0, 1) ;
+   }
    void buildpat() ;
    apg::lifetree<uint32_t, 1> lt ;
    apg::bitworld bw ;
@@ -49,7 +52,7 @@ void lifelibalgo::swap() { }
 int lifelibalgo::nextstep(int id, int nid) {
    if (nid != 1)
       error("! multithreading not supported") ;
-   pat = pat[1] ;
+   pat = pat[increment] ;
    return getpopulation() ;
 }
 typedef apg::upattern<apg::VTile28, 28> upat ;
@@ -61,6 +64,9 @@ public:
    virtual int getpopulation() ;
    virtual int nextstep(int, int) ;
    virtual void swap() ;
+   virtual int nextstep() { 
+      return nextstep(0, 1) ;
+   }
    void buildpat() ;
    apg::bitworld bw ;
    int patbuilt ;
@@ -95,6 +101,6 @@ void ulifelibalgo::swap() { }
 int ulifelibalgo::nextstep(int id, int nid) {
    if (nid != 1)
       error("! multithreading not supported") ;
-   pat.advance(0, 0, 1) ;
+   pat.advance(0, 0, increment) ;
    return getpopulation() ;
 }

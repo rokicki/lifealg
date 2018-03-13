@@ -28,12 +28,18 @@ void registerAlgo(const char *name, lifealgofactory *laf) {
 static int numthreads = 1 ;
 int verbose = 0 ;
 int main(int argc, char *argv[]) {
+   int inc = 1 ;
    while (argc > 1 && argv[1][0] == '-') {
       argc-- ;
       argv++ ;
       switch (argv[0][1]) {
 case 't':
          numthreads = atoll(argv[1]) ;
+         argc-- ;
+         argv++ ;
+         break ;
+case 'i':
+         inc = atoll(argv[1]) ;
          argc-- ;
          argv++ ;
          break ;
@@ -52,13 +58,15 @@ case 'v':
       error("! no such algorithm") ;
    lifealgo *la = (*factories)[string(algo)]->createInstance() ;
    la->init(sz, sz) ;
+   if (inc != 1)
+      la->setinc(inc) ;
    for (int y=1; y+1<sz; y++)
       for (int x=1; x+1<sz; x++)
          if (drand48() < 0.37)
             la->setcell(x, y) ;
    int pop = la->getpopulation() ;
    cout << "Initialized in " << duration() << " population = " << pop << endl ;
-   for (int g=1; g <= gens; g++) {
+   for (int g=inc; g <= gens; g += inc) {
       if (numthreads <= 1)
          pop = la->nextstep() ;
       else
