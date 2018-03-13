@@ -54,7 +54,7 @@ case 'v':
    la->init(sz, sz) ;
    for (int y=1; y+1<sz; y++)
       for (int x=1; x+1<sz; x++)
-         if (drand48() < 0.288)
+         if (drand48() < 0.37)
             la->setcell(x, y) ;
    int pop = la->getpopulation() ;
    cout << "Initialized in " << duration() << " population = " << pop << endl ;
