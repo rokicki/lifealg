@@ -26,6 +26,7 @@ void registerAlgo(const char *name, lifealgofactory *laf) {
    (*factories)[string(name)] = laf ;
 }
 static int numthreads = 1 ;
+int verbose = 0 ;
 int main(int argc, char *argv[]) {
    while (argc > 1 && argv[1][0] == '-') {
       argc-- ;
@@ -35,6 +36,9 @@ case 't':
          numthreads = atoll(argv[1]) ;
          argc-- ;
          argv++ ;
+         break ;
+case 'v':
+         verbose++ ;
          break ;
       }
    }
@@ -50,15 +54,18 @@ case 't':
    la->init(sz, sz) ;
    for (int y=1; y+1<sz; y++)
       for (int x=1; x+1<sz; x++)
-         if (drand48() < 0.5)
+         if (drand48() < 0.288)
             la->setcell(x, y) ;
    int pop = la->getpopulation() ;
    cout << "Initialized in " << duration() << " population = " << pop << endl ;
-   for (int g=1; g <= gens; g++)
+   for (int g=1; g <= gens; g++) {
       if (numthreads <= 1)
          pop = la->nextstep() ;
       else
          pop = doparthreads(la) ;
+      if (verbose)
+         cout << g << " " << pop << endl << flush ;
+   }
    double tim = duration() ;
    double cgps = sz * (double)sz * (double)gens / tim ;
    cout << "Final pop is " << pop << " time " << tim << " cgps " << cgps << endl ;
