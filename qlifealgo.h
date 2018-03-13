@@ -195,15 +195,15 @@ public:
    virtual void setcell(int x, int y) { setcell(x, y, 1) ; }
    virtual void swap() {}
    virtual ~qlifealgo() ;
-   void clearall() ;
-   int setcell(int x, int y, int newstate) ;
-   int getcell(int x, int y) ;
-   int nextcell(int x, int y, int &v) ;
-   int nextstep(int id, int n) {
+   virtual int nextstep(int id, int n) {
       if (n != 1) error("! no multithreading") ;
       step() ;
       return (int)popcount() ;
    }
+   void clearall() ;
+   int setcell(int x, int y, int newstate) ;
+   int getcell(int x, int y) ;
+   int nextcell(int x, int y, int &v) ;
    // call after setcell/clearcell calls
    void endofpattern() {
      // AKT: unnecessary (and prevents shrinking selection while generating)
