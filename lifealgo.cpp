@@ -29,6 +29,11 @@ static int numthreads = 1 ;
 int verbose = 0 ;
 int main(int argc, char *argv[]) {
    int inc = 1 ;
+   char *rle = 0 ;
+   int maxgens = INT_MAX ;
+   int random = 0 ;
+   int width = 0 ;
+   int height = 0 ;
    while (argc > 1 && argv[1][0] == '-') {
       argc-- ;
       argv++ ;
@@ -38,8 +43,31 @@ case 't':
          argc-- ;
          argv++ ;
          break ;
-case 'i':
+case 'f':
          inc = atoll(argv[1]) ;
+         argc-- ;
+         argv++ ;
+         break ;
+case 'w':
+         width = atoll(argv[1]) ;
+         argc-- ;
+         argv++ ;
+         break ;
+case 'h':
+         height = atoll(argv[1]) ;
+         argc-- ;
+         argv++ ;
+         break ;
+case 'r':
+         random++ ;
+         break ;
+case 'i':
+         rle = argv[1] ;
+         argc-- ;
+         argv++ ;
+         break ;
+case 'm':
+         maxgens = atoll(argv[1]) ;
          argc-- ;
          argv++ ;
          break ;
@@ -49,24 +77,30 @@ case 'v':
       }
    }
    const char *algo = argv[1] ;
-   int sz = atoll(argv[2]) ;
-   int gens = atoll(argv[3]) ;
    duration() ;
    if (numthreads > 1)
       setthreadcount(numthreads) ;
    if (factories->find(string(algo)) == factories->end())
       error("! no such algorithm") ;
    lifealgo *la = (*factories)[string(algo)]->createInstance() ;
-   la->init(sz, sz) ;
+   la->init(width, height) ;
    if (inc != 1)
       la->setinc(inc) ;
-   for (int y=1; y+1<sz; y++)
-      for (int x=1; x+1<sz; x++)
-         if (drand48() < 0.37)
-            la->setcell(x, y) ;
+   if (random) {
+      if (width < 3 || height < 3)
+         error("! need a width and height for random") ;
+      for (int y=1; y+1<height; y++)
+         for (int x=1; x+1<width; x++)
+            if (drand48() < 0.37)
+               la->setcell(x, y) ;
+   } else if (rle) {
+      readrle(rle, la, width>>1, height>>1) ;
+   } else {
+      error("! either give -r or -f rlefile") ;
+   }
    int pop = la->getpopulation() ;
    cout << "Initialized in " << duration() << " population = " << pop << endl ;
-   for (int g=inc; g <= gens; g += inc) {
+   for (int g=inc; g <= maxgens; g += inc) {
       if (numthreads <= 1)
          pop = la->nextstep() ;
       else
@@ -75,7 +109,7 @@ case 'v':
          cout << g << " " << pop << endl << flush ;
    }
    double tim = duration() ;
-   double cgps = sz * (double)sz * (double)gens / tim ;
+   double cgps = width * (double)height * (double)maxgens / tim ;
    cout << "Final pop is " << pop << " time " << tim << " cgps " << cgps << endl ;
    if (la->getpopulation() != pop) {
       cout << "Execution returned " << pop << " but scan says " <<

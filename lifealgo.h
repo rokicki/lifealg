@@ -26,4 +26,5 @@ public:
    virtual lifealgo *createInstance() = 0 ;
 } ;
 extern void registerAlgo(const char *name, lifealgofactory *laf) ;
+extern void readrle(const char *filename, lifealgo *la, int startx, int starty) ;
 #endif
