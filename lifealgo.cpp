@@ -100,13 +100,13 @@ case 'v':
    }
    int pop = la->getpopulation() ;
    cout << "Initialized in " << duration() << " population = " << pop << endl ;
-   for (int g=inc; g <= maxgens; g += inc) {
+   for (int g=0; g < maxgens; g += inc) {
       if (numthreads <= 1)
          pop = la->nextstep() ;
       else
          pop = doparthreads(la) ;
       if (verbose)
-         cout << g << " " << pop << endl << flush ;
+         cout << (g+inc) << " " << pop << endl << flush ;
    }
    double tim = duration() ;
    double cgps = width * (double)height * (double)maxgens / tim ;

@@ -8,7 +8,7 @@
 #include <cstdio>
 void readrle(const char *filename, lifealgo *la, int xstart, int ystart) {
    FILE *f = fopen(filename, "r") ;
-   if (f != 0)
+   if (f == 0)
       error("! could not open rle file") ;
    const int BUFSIZE = 8192 ;
    char inpbuf[BUFSIZE+1] ;
@@ -18,7 +18,7 @@ void readrle(const char *filename, lifealgo *la, int xstart, int ystart) {
    for (int lineno=1; fgets(inpbuf, BUFSIZE, f) != 0; lineno++) {
       if (inpbuf[0] == '#') {
          continue ;
-      } else if (inpbuf[0] == 'x' && lineno == 1) {
+      } else if (inpbuf[0] == 'x') {
          int patw, path ;
          if (sscanf(inpbuf, "x = %d,  y = %d", &patw, &path) != 2)
             error("! did not properly parse the x line in the RLE") ;
@@ -49,6 +49,7 @@ void readrle(const char *filename, lifealgo *la, int xstart, int ystart) {
                } else if (*p == '!') {
                   ended++ ;
                } else {
+                  printf("Character is '%c'\n", *p) ;
                   error("! unexpected char in RLE") ;
                }
                cnt = 0 ;
