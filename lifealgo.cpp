@@ -34,6 +34,7 @@ int main(int argc, char *argv[]) {
    int random = 0 ;
    int width = 0 ;
    int height = 0 ;
+   int hyperspeed = 0 ;
    while (argc > 1 && argv[1][0] == '-') {
       argc-- ;
       argv++ ;
@@ -42,6 +43,9 @@ case 't':
          numthreads = atoll(argv[1]) ;
          argc-- ;
          argv++ ;
+         break ;
+case '2':
+         hyperspeed++ ;
          break ;
 case 'i':
          inc = atoll(argv[1]) ;
@@ -100,17 +104,26 @@ case 'v':
    }
    int pop = la->getpopulation() ;
    cout << "Initialized in " << duration() << " population = " << pop << endl ;
-   for (int g=0; g < maxgens; g += inc) {
+   int finalg = 0 ;
+   for (int g=0; g < maxgens; ) {
+      finalg += inc ;
       if (numthreads <= 1)
          pop = la->nextstep() ;
       else
          pop = doparthreads(la) ;
+      g += inc ;
       if (verbose)
-         cout << (g+inc) << " " << pop << endl << flush ;
+         cout << g << " " << pop << endl << flush ;
+      if (hyperspeed && inc < (1<<30)) {
+         inc += inc ;
+         la->setinc(inc) ;
+      }
    }
    double tim = duration() ;
-   double cgps = width * (double)height * (double)maxgens / tim ;
-   cout << "Final pop is " << pop << " time " << tim << " cgps " << cgps << endl ;
+   double gps = finalg / tim ;
+   double cgps = width * (double)height * (double)finalg / tim ;
+   cout << "Final pop is " << pop << " time " << tim << " gps " << gps <<
+           " cgps " << cgps << endl ;
    if (la->getpopulation() != pop) {
       cout << "Execution returned " << pop << " but scan says " <<
               la->getpopulation() << endl ;
