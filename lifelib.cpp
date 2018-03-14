@@ -64,6 +64,11 @@ public:
    virtual int getpopulation() ;
    virtual int nextstep(int, int) ;
    virtual void swap() ;
+   virtual void setinc(int inc) {
+      lifealgo::setinc(inc) ;
+      if (inc & 1)
+         error("! odd increments not supported") ;
+   }
    virtual int nextstep() { 
       return nextstep(0, 1) ;
    }
