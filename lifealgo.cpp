@@ -43,7 +43,7 @@ case 't':
          argc-- ;
          argv++ ;
          break ;
-case 'f':
+case 'i':
          inc = atoll(argv[1]) ;
          argc-- ;
          argv++ ;
@@ -61,7 +61,7 @@ case 'h':
 case 'r':
          random++ ;
          break ;
-case 'i':
+case 'f':
          rle = argv[1] ;
          argc-- ;
          argv++ ;
