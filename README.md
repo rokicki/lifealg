@@ -5,7 +5,7 @@ To build, just type make.
 
 Sample run:
 
-   ./lifealgo qlife 2048 100
+   ./lifealgo -w 2048 -h 2048 -m 200 -r qlife
 
 Algorithms that should work are:
 
