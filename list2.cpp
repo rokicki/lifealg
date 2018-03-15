@@ -3,6 +3,7 @@
 #include <cstdlib>
 #include <vector>
 #include <algorithm>
+#include <limits.h>
 using namespace std ;
 class list2algo : public lifealgo {
 public:

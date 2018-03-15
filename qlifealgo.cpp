@@ -1155,7 +1155,6 @@ const char *qlifealgo::setrule(const char *s) {
    return 0;
 }
 
-static lifealgo *creator() { return new qlifealgo() ; }
 static class qlifealgofactory : public lifealgofactory {
 public:
    qlifealgofactory() ;

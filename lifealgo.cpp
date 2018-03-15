@@ -5,9 +5,10 @@
 #include <string>
 #include <cstdlib>
 #include <iostream>
+#include <limits.h>
 #include <sys/time.h>
 using namespace std ;
-static double start, beginning ;
+static double start ;
 double walltime() {
    struct timeval tv ;
    gettimeofday(&tv, 0) ;

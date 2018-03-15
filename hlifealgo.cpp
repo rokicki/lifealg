@@ -1511,7 +1511,6 @@ int hlifealgo::log2(unsigned int n) {
    }
    return r ;
 }
-static int negone = -1 ;
 const int hlifealgo::getPopulation() {
    // note:  if called during gc, then we cannot call calcPopulation
    // since that will mess up the gc.

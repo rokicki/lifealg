@@ -111,7 +111,7 @@ static inline void add3(ull a, ull b, ull c,
  *   in the four provided cells; each is an 8x8 universe.  We use bit tricks.
  */
 static ull calc(ull nw, ull ne, ull sw, ull se) {
-   ull n0, n1, s0, s1, a0, a1, a2, c1, b1, b2 ;
+   ull n0, n1, s0, s1, a0, a1, a2, c1, b1 ;
    add3(nw,
         ((nw >> 1) & 0x7f7f7f7f7f7f7f7fLL) + ((ne << 7) & 0x8080808080808080LL),
         ((nw >> 2) & 0x3f3f3f3f3f3f3f3fLL) + ((ne << 6) & 0xc0c0c0c0c0c0c0c0LL),
