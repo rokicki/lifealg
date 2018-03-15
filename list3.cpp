@@ -89,15 +89,12 @@ int list3algo::nextstep(int id, int nid) {
       int x = -END ;
       while (1) {
          int xt = END ;
-         if (a0[r0] == y-1) {
+         if (a0[r0] == y-1)
             xt = a0[p0] ;
-         }
-         if (a0[r1] == y) {
+         if (a0[r1] == y)
             xt = min(xt, a0[p1]) ;
-         }
-         if (a0[r2] == y+1) {
+         if (a0[r2] == y+1)
             xt = min(xt, a0[p2]) ;
-         }
          if (xt == END) {
             if (a0[r0] == y-1)
                r0 = p0 + 1 ;
