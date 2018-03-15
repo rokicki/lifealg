@@ -39,7 +39,7 @@ int listalgo::nextstep(int id, int nid) {
    if (nid != 1)
       error("! multithreading not yet supported") ;
    pts2.clear() ;
-   for (int i=0; i<pts.size(); i++) {
+   for (size_t i=0; i<pts.size(); i++) {
       int x = pts[i].first ;
       int y = pts[i].second ;
       pts2.push_back(make_pair(x-1, y-1)) ;
@@ -56,9 +56,9 @@ int listalgo::nextstep(int id, int nid) {
       sort(pts.begin(), pts.end()) ;
       sorted = 1 ;
    }
-   int w = 0 ;
-   int rd = 0 ;
-   int at = 0 ;
+   size_t w = 0 ;
+   size_t rd = 0 ;
+   size_t at = 0 ;
    while (at < pts2.size()) {
       int cnt = 1 ;
       while (at + cnt < pts2.size() && pts2[at+cnt] == pts2[at])

@@ -8,7 +8,7 @@
 #define QLIFEALGO_H
 #include "liferules.h"
 typedef long long G_INT64 ;
-typedef long long g_uintptr_t ;
+typedef unsigned long long g_uintptr_t ;
 #define lifefatal error
 /*
  *   The smallest unit of the universe is the `slice', which is a

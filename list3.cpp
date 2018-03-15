@@ -53,7 +53,7 @@ void list3algo::createit() {
    if (!created) {
       sort(pts.begin(), pts.end()) ;
       int cury = -1 ;
-      for (int i=0; i<pts.size(); i++) {
+      for (size_t i=0; i<pts.size(); i++) {
          if (pts[i].first != cury) {
             if (cury != -1)
                a0.push_back(END) ;

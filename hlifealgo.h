@@ -7,7 +7,7 @@
 #include "liferules.h"
 #include "util.h"
 typedef long long G_INT64 ;
-typedef long long g_uintptr_t ;
+typedef unsigned long long g_uintptr_t ;
 const long long G_MAX = 0x7fffffffffffffffLL ;
 #define lifefatal error
 /*

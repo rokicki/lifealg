@@ -60,9 +60,9 @@ void list8x8algo::flushit(vector<pair<pair<ll, ll>, ull> > &trow) {
       return ;
    sort(trow.begin(), trow.end()) ;
    a0.push_back(trow[0].first.first << 3) ;
-   for (int i=0; i<trow.size(); ) {
+   for (size_t i=0; i<trow.size(); ) {
       ull bits = trow[i].second ;
-      int j = 1 ;
+      size_t j = 1 ;
       while (i+j < trow.size() && trow[i].first == trow[i+j].first) {
          bits |= trow[i+j].second ;
          j++ ;
@@ -79,7 +79,7 @@ void list8x8algo::createit() {
       sort(pts.begin(), pts.end()) ;
       ll cury = END ;
       vector<pair<pair<ll, ll>, ull> > trow ;
-      for (ll i=0; i<pts.size(); i++) {
+      for (size_t i=0; i<pts.size(); i++) {
          ll yy = pts[i].first >> 3 ;
          if (yy != cury) {
             flushit(trow) ;

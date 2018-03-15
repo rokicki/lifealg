@@ -50,20 +50,20 @@ int list2algo::nextstep(int id, int nid) {
       int ptrs[3] ;
       for (int i=0; i<3; i++)
          ptrs[i] = 0 ;
-      while (ptrs[0] < pts.size()) {
+      while ((size_t)ptrs[0] < pts.size()) {
          int n = 0 ;
          for (int i=0; i<3; i++) {
             pair<int, int> leftedge = make_pair(x-1+i, y-1) ;
             pair<int, int> rightedge = make_pair(x-1+i, y+2) ;
             int cnt = 0 ;
-            while (ptrs[i] + cnt < pts.size() && pts[ptrs[i]+cnt] < rightedge)
+            while ((size_t)(ptrs[i] + cnt) < pts.size() && pts[ptrs[i]+cnt] < rightedge)
                cnt++ ;
             n += cnt ;
-            if (ptrs[i] < pts.size() && pts[ptrs[i]] == leftedge) {
+            if ((size_t)(ptrs[i]) < pts.size() && pts[ptrs[i]] == leftedge) {
                ptrs[i]++ ;
             }
          }
-         if (n == 3 || (n == 4 && ptrs[1] < pts.size() &&
+         if (n == 3 || (n == 4 && (size_t)ptrs[1] < pts.size() &&
                         pts[ptrs[1]].first == x && 
                         pts[ptrs[1]].second == y))
             pts2.push_back(make_pair(x, y)) ;
@@ -71,7 +71,7 @@ int list2algo::nextstep(int id, int nid) {
             x = INT_MAX ;
             y = INT_MAX ;
             for (int i=0; i<3; i++) {
-               if (ptrs[i] < pts.size() &&
+               if ((size_t)ptrs[i] < pts.size() &&
                    (pts[ptrs[i]].first + 1 - i < x ||
                     (pts[ptrs[i]].first + 1 - i == x &&
                      pts[ptrs[i]].second-1 < y))) {
