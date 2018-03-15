@@ -41,15 +41,18 @@ void *threadworker(void *o) {
    return 0 ;
 }
 int doparthreads(lifealgo *la) {
-   for (int i=0; i<numthreads; i++) {
-      workers[i].i = i ;
-      workers[i].la = la ;
-      spawn_thread(i, threadworker, workers+i) ;
-   }
    int r = 0 ;
-   for (int i=0; i<numthreads; i++) {
-      join_thread(i) ;
-      r += workers[i].pop ;
+   for (int j=0; j<la->increment; j++) {
+      for (int i=0; i<numthreads; i++) {
+         workers[i].i = i ;
+         workers[i].la = la ;
+         spawn_thread(i, threadworker, workers+i) ;
+      }
+      r = 0 ;
+      for (int i=0; i<numthreads; i++) {
+         join_thread(i) ;
+         r += workers[i].pop ;
+      }
    }
    la->swap() ;
    return r ;
