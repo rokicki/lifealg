@@ -15,7 +15,7 @@ public:
    virtual int nextstep(int, int) ;
    virtual void swap() ;
    int w, h, wordwidth ;
-   unsigned long long wh ;
+   long long wh ;
    lifeword *u0, *u1 ;
 } ;
 static class ssealgofactory : public lifealgofactory {

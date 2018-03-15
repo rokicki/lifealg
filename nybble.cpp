@@ -12,7 +12,7 @@ public:
    virtual int nextstep(int, int) ;
    virtual void swap() ;
    int w, h, wordwidth ;
-   unsigned long long wh ;
+   long long wh ;
    ull *u0, *u1 ;
 } ;
 static class nybblealgofactory : public lifealgofactory {

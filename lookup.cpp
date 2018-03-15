@@ -10,7 +10,7 @@ public:
    virtual int nextstep(int, int) ;
    virtual void swap() ;
    int w, h ;
-   unsigned long long wh ;
+   long long wh ;
    unsigned char *u0, *u1 ;
 } ;
 static class lookupalgofactory : public lifealgofactory {
