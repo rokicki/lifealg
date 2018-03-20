@@ -31,7 +31,7 @@ void lookup2algo::init(int w_, int h_) {
    u1 = (unsigned char *)calloc(w, h) ;
 }
 void lookup2algo::setcell(int x, int y) {
-   u0[y * h + x] = 1 ;
+   u0[y * w + x] = 1 ;
 }
 int lookup2algo::getpopulation() {
    int r = 0 ;

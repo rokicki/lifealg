@@ -31,7 +31,7 @@ void array2algo::init(int w_, int h_) {
    u1 = (unsigned char *)calloc(w, h) ;
 }
 void array2algo::setcell(int x, int y) {
-   u0[y * h + x] = 1 ;
+   u0[y * w + x] = 1 ;
 }
 int array2algo::getpopulation() {
    int r = 0 ;
@@ -45,10 +45,10 @@ int array2algo::nextstep(int id, int nid) {
    int ylo = (h - 2) * id / nid + 1 ;
    int yhi = (h - 2) * (id + 1) / nid + 1 ;
    for (int y=ylo; y<yhi; y++) {
-      unsigned char *__restrict__ rp = u0 + (y-1)*w + 1 ;
-      unsigned char *__restrict__ r = u0 + y*w + 1 ;
-      unsigned char *__restrict__ rn = u0 + (y+1)*w + 1 ;
-      unsigned char *__restrict__ wr = u1 + y*w + 1 ;
+      unsigned char *rp = u0 + (y-1)*w + 1 ;
+      unsigned char *r = u0 + y*w + 1 ;
+      unsigned char *rn = u0 + (y+1)*w + 1 ;
+      unsigned char *wr = u1 + y*w + 1 ;
       for (int x=1; x+1<w; x++, r++, rp++, rn++, wr++) {
          int n = rp[-1]+rp[0]+rp[1]+r[-1]+r[1]+rn[-1]+rn[0]+rn[1] ;
          if (n == 3 || (n == 2 && *r)) {
