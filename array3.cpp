@@ -40,7 +40,6 @@ int array3algo::getpopulation() {
    return r ;
 }
 void array3algo::swap() {}
-#include <iostream>
 int array3algo::nextstep(int id, int nid) {
    if (nid != 1)
       error("! multithreading not supported yet") ;
