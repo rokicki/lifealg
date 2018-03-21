@@ -45,6 +45,8 @@ public:
       freenode(n) ;
    }
    node *makenode(node *nw, node *ne, node *sw, node *se) {
+      if (nw == 0 && ne == 0 && sw == 0 && se == 0)
+         return 0 ;
       node *r = getnode() ;
       r->c[0] = nw ;
       r->c[1] = ne ;
@@ -53,6 +55,8 @@ public:
       return r ;
    }
    node *makenode(ull nw, ull ne, ull sw, ull se) {
+      if (nw == 0 && ne == 0 && sw == 0 && se == 0)
+         return 0 ;
       node *r = getnode() ;
       r->leaf[0] = nw ;
       r->leaf[1] = ne ;
@@ -66,11 +70,13 @@ public:
       return r ;
    }
    void pushroot() {
-      node *newroot = makenode(
-         makenode(0, 0, 0, root->c[0]), makenode(0, 0, root->c[1], 0),
-         makenode(0, root->c[2], 0, 0), makenode(root->c[3], 0, 0, 0)) ;
-      freenode(root) ;
-      root = newroot ;
+      if (root != 0) {
+         node *newroot = makenode(
+            makenode(0, 0, 0, root->c[0]), makenode(0, 0, root->c[1], 0),
+            makenode(0, root->c[2], 0, 0), makenode(root->c[3], 0, 0, 0)) ;
+         freenode(root) ;
+         root = newroot ;
+      }
       depth++ ;
    }
    void poproot() {
@@ -93,6 +99,7 @@ public:
                       root->c[3] ? root->c[3]->c[0] : 0) ;
          for (int i=0; i<4; i++)
             freenode(root->c[i]) ;
+         freenode(root) ;
          root = n ;
          depth-- ;
       }
@@ -118,7 +125,7 @@ static int popcount64(ull v) {
 }
 void treealgo::init(int w_, int h_) {
    depth = 4 ;
-   root = clearednode() ;
+   root = 0 ;
    empty = clearednode() ;
 }
 void treealgo::setcell(int x, int y, node *n, int d) {
@@ -136,6 +143,8 @@ void treealgo::setcell(int x, int y) {
           (y >> (depth-1)) > 0 || (y >> (depth-1)) < -1)
       pushroot() ;
    int w = 1 << (depth - 1) ;
+   if (root == 0)
+      root = clearednode() ;
    setcell(x + w, y + w, root, depth) ;
 }
 int treealgo::getpop(node *n, int d) {
@@ -223,7 +232,6 @@ int treealgo::nextstep(int id, int nid) {
    if (nid != 1)
       error("! multithreading not yet supported") ;
    pushroot() ;
-   pushroot() ;
    node *nroot =
            calculate(root, 0, 0, 0, depth) ;
    if (nroot == 0)
@@ -231,6 +239,5 @@ int treealgo::nextstep(int id, int nid) {
    freetree(root, depth) ;
    root = nroot ;
    poproot() ;
-   printf("Depth is %d\n", depth) ;
    return getpopulation() ;
 }
