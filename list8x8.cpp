@@ -93,6 +93,9 @@ void list8x8algo::createit() {
          a0.push_back(END) ;
       created = 1 ;
    }
+   // free the storage associated with the set cells
+   vector<pair<int, int> > t ;
+   ::swap(t, pts) ;
 }
 static inline void add2(ull a, ull b,
                         ull &c0, ull &c1) {
