@@ -28,11 +28,12 @@ void setthreadcount(int n) {
 }
 struct worker {
    void dowork() {
-      pop = la->nextstep(i, numthreads) ;
+      pop = la->nextstep(i, numthreads, needpop) ;
    }
    lifealgo *la ;
    int i ;
    int pop ;
+   int needpop ;
    long long pad[8] ;
 } workers[MAX_THREADS] ;
 void *threadworker(void *o) {
@@ -43,9 +44,11 @@ void *threadworker(void *o) {
 int doparthreads(lifealgo *la) {
    int r = 0 ;
    for (int j=0; j<la->increment; j++) {
+      int needpop = (j + 1 == la->increment) ;
       for (int i=0; i<numthreads; i++) {
          workers[i].i = i ;
          workers[i].la = la ;
+         workers[i].needpop = needpop ;
          spawn_thread(i, threadworker, workers+i) ;
       }
       r = 0 ;

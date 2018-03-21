@@ -197,12 +197,15 @@ public:
    virtual ~qlifealgo() ;
    virtual void setinc(int i) { lifealgo::setinc(i) ; setIncrement(i) ; }
    virtual int nextstep() { 
-      return nextstep(0, 1) ;
+      return nextstep(0, 1, 1) ;
    }
-   virtual int nextstep(int id, int n) {
+   virtual int nextstep(int id, int n, int needpop) {
       if (n != 1) error("! no multithreading") ;
       step() ;
-      return (int)popcount() ;
+      if (needpop)
+         return (int)popcount() ;
+      else
+         return 0 ;
    }
    void clearall() ;
    int setcell(int x, int y, int newstate) ;

@@ -9,7 +9,7 @@ public:
    virtual void init(int w, int h) ;
    virtual void setcell(int x, int y) ;
    virtual int getpopulation() ;
-   virtual int nextstep(int, int) ;
+   virtual int nextstep(int, int, int) ;
    virtual void swap() ;
    int w, h, wordwidth ;
    long long wh ;
@@ -43,7 +43,7 @@ int nybblealgo::getpopulation() {
    return r ;
 }
 void nybblealgo::swap() { ::swap(u0, u1) ; }
-int nybblealgo::nextstep(int id, int n) {
+int nybblealgo::nextstep(int id, int n, int needpop) {
    ull r = 0 ;
    int loi = id * (h - 2) / n + 1 ;
    int hii = (id + 1) * (h - 2) / n + 1 ;
@@ -61,7 +61,8 @@ int nybblealgo::nextstep(int id, int n) {
          ull cw = *cwp ;
          ull ng = cw | ((pws >> 60) + (cws >> 4) + cws + (cws << 4) + (nws << 60) - cw) ;
          ng &= (ng >> 1) & (~((ng >> 2) | (ng >> 3))) & 0x1111111111111111LL ;
-         r += __builtin_popcountll(ng) ;
+         if (needpop)
+            r += __builtin_popcountll(ng) ;
          *wr = ng ;
          pws = cws ;
          cws = nws ;

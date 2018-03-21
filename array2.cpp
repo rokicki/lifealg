@@ -7,7 +7,7 @@ public:
    virtual void init(int w, int h) ;
    virtual void setcell(int x, int y) ;
    virtual int getpopulation() ;
-   virtual int nextstep(int, int) ;
+   virtual int nextstep(int, int, int) ;
    virtual void swap() ;
    int w, h ;
    long long wh ;
@@ -40,7 +40,7 @@ int array2algo::getpopulation() {
    return r ;
 }
 void array2algo::swap() { ::swap(u0, u1) ; }
-int array2algo::nextstep(int id, int nid) {
+int array2algo::nextstep(int id, int nid, int) {
    int pop = 0 ;
    int ylo = (h - 2) * id / nid + 1 ;
    int yhi = (h - 2) * (id + 1) / nid + 1 ;

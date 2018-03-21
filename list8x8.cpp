@@ -12,7 +12,7 @@ public:
    virtual void init(int w, int h) ;
    virtual void setcell(int x, int y) ;
    virtual int getpopulation() ;
-   virtual int nextstep(int, int) ;
+   virtual int nextstep(int, int, int) ;
    virtual void swap() ;
    void createit() ;
    void flushit(vector<pair<pair<ll, ll>, ull> > &trow) ;
@@ -134,7 +134,7 @@ static ull calc(ull nw, ull ne, ull sw, ull se) {
                  (se << 63) ;
    return (~(a0 ^ a1)) & (a1 ^ a2) & (curgen | a1) ;
 }
-int list8x8algo::nextstep(int id, int nid) {
+int list8x8algo::nextstep(int id, int nid, int needpop) {
    int r = 0 ;
    if (nid != 1)
       error("! multithreading not yet supported") ;
@@ -191,7 +191,8 @@ int list8x8algo::nextstep(int id, int nid) {
             }
             a1.push_back(x+1) ;
             a1.push_back(nb) ;
-            r += popcount64(nb) ;
+            if (needpop)
+               r += popcount64(nb) ;
          }
          x += 8 ;
       }

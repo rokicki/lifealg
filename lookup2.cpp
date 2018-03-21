@@ -7,7 +7,7 @@ public:
    virtual void init(int w, int h) ;
    virtual void setcell(int x, int y) ;
    virtual int getpopulation() ;
-   virtual int nextstep(int, int) ;
+   virtual int nextstep(int, int, int) ;
    virtual void swap() ;
    int w, h ;
    long long wh ;
@@ -42,7 +42,7 @@ int lookup2algo::getpopulation() {
 static unsigned char tab[] =
     { 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 1, 1, 0, 0, 0, 0, 0, 0 } ;
 void lookup2algo::swap() { ::swap(u0, u1) ; }
-int lookup2algo::nextstep(int id, int n) {
+int lookup2algo::nextstep(int id, int n, int) {
    int pop = 0 ;
    int loy = id * (h - 2) / n + 1 ;
    int hiy = (id + 1) * (h - 2) / n + 1 ;

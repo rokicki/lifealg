@@ -12,10 +12,10 @@ public:
    virtual void init(int w, int h) ;
    virtual void setcell(int x, int y) ;
    virtual int getpopulation() ;
-   virtual int nextstep(int, int) ;
+   virtual int nextstep(int, int, int) ;
    virtual void swap() ;
    virtual int nextstep() { 
-      return nextstep(0, 1) ;
+      return nextstep(0, 1, 1) ;
    }
    void buildpat() ;
    apg::lifetree<uint32_t, 1> lt ;
@@ -49,7 +49,7 @@ int lifelibalgo::getpopulation() {
    return pat.popcount(1000000009) ;
 }
 void lifelibalgo::swap() { }
-int lifelibalgo::nextstep(int id, int nid) {
+int lifelibalgo::nextstep(int id, int nid, int needpop) {
    if (nid != 1)
       error("! multithreading not supported") ;
    pat = pat[increment] ;
@@ -62,7 +62,7 @@ public:
    virtual void init(int w, int h) ;
    virtual void setcell(int x, int y) ;
    virtual int getpopulation() ;
-   virtual int nextstep(int, int) ;
+   virtual int nextstep(int, int, int) ;
    virtual void swap() ;
    virtual void setinc(int inc) {
       lifealgo::setinc(inc) ;
@@ -70,7 +70,7 @@ public:
          error("! odd increments not supported") ;
    }
    virtual int nextstep() { 
-      return nextstep(0, 1) ;
+      return nextstep(0, 1, 1) ;
    }
    void buildpat() ;
    apg::bitworld bw ;
@@ -103,9 +103,12 @@ int ulifelibalgo::getpopulation() {
    return pat.totalPopulation() ;
 }
 void ulifelibalgo::swap() { }
-int ulifelibalgo::nextstep(int id, int nid) {
+int ulifelibalgo::nextstep(int id, int nid, int needpop) {
    if (nid != 1)
       error("! multithreading not supported") ;
    pat.advance(0, 0, increment) ;
-   return getpopulation() ;
+   if (needpop)
+      return getpopulation() ;
+   else
+      return 0 ;
 }

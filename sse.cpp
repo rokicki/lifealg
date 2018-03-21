@@ -12,7 +12,7 @@ public:
    virtual void init(int w, int h) ;
    virtual void setcell(int x, int y) ;
    virtual int getpopulation() ;
-   virtual int nextstep(int, int) ;
+   virtual int nextstep(int, int, int) ;
    virtual void swap() ;
    int w, h, wordwidth ;
    long long wh ;
@@ -82,7 +82,7 @@ static lifeword bigrightshift(lifeword v) {
    return _mm_srli_epi64(_mm_srli_si128(v, 8), 63) ;
 }
 void ssealgo::swap() { ::swap(u0, u1) ; }
-int ssealgo::nextstep(int id, int n) {
+int ssealgo::nextstep(int id, int n, int needpop) {
    int r = 0 ;
    int loi = id * wordwidth / n ;
    int hii = (id + 1) * wordwidth / n ;
@@ -130,7 +130,8 @@ int ssealgo::nextstep(int id, int n) {
          add3(b1, w31, a1, a1, a2) ;
          ng2 = (~(a0 ^ a1)) & (a1 ^ a2 ^ b2) & (w2 | a1) ;
          wcol[1] = ng2 ;
-         r += popcount128(ng1) + popcount128(ng2) ;
+         if (needpop)
+            r += popcount128(ng1) + popcount128(ng2) ;
          w00 = w20 ;
          w01 = w21 ;
          w10 = w30 ;

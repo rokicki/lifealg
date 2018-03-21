@@ -7,7 +7,7 @@ public:
    virtual void init(int w, int h) ;
    virtual void setcell(int x, int y) ;
    virtual int getpopulation() ;
-   virtual int nextstep(int, int) ;
+   virtual int nextstep(int, int, int) ;
    virtual void swap() ;
    int w, h ;
    long long wh ;
@@ -41,7 +41,7 @@ int array4algo::getpopulation() {
    return r ;
 }
 void array4algo::swap() {}
-int array4algo::nextstep(int id, int nid) {
+int array4algo::nextstep(int id, int nid, int) {
    if (nid != 1)
       error("! multithreading not supported yet") ;
    int pop = 0 ;

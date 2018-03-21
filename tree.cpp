@@ -16,7 +16,7 @@ public:
    virtual void init(int w, int h) ;
    virtual void setcell(int x, int y) ;
    virtual int getpopulation() ;
-   virtual int nextstep(int, int) ;
+   virtual int nextstep(int, int, int) ;
    virtual void swap() ;
    node *getnode() {
       if (freenodes == 0) {
@@ -228,7 +228,7 @@ node *treealgo::calculate(node *nw, node *ne, node *sw, node *se, int d) {
          calculate(nw->c[3], ne->c[2], sw->c[1], se->c[0], d)) ;
    }
 }
-int treealgo::nextstep(int id, int nid) {
+int treealgo::nextstep(int id, int nid, int needpop) {
    if (nid != 1)
       error("! multithreading not yet supported") ;
    pushroot() ;
@@ -239,5 +239,8 @@ int treealgo::nextstep(int id, int nid) {
    freetree(root, depth) ;
    root = nroot ;
    poproot() ;
-   return getpopulation() ;
+   if (needpop)
+      return getpopulation() ;
+   else
+      return 0 ;
 }

@@ -165,12 +165,15 @@ public:
    virtual void swap() {}
    virtual void setinc(int i) { lifealgo::setinc(i) ; setIncrement(i) ; }
    virtual int nextstep() {
-      return nextstep(0, 1) ;
+      return nextstep(0, 1, 1) ;
    }
-   virtual int nextstep(int id, int n) {
+   virtual int nextstep(int id, int n, int needpop) {
       if (n != 1) error("! no multithreading") ;
       step() ;
-      return (int)getPopulation() ;
+      if (needpop)
+         return (int)getPopulation() ;
+      else
+         return 0 ;
    }
    virtual ~hlifealgo() ;
    // note that for hlifealgo, clearall() releases no memory; it retains

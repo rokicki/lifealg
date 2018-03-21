@@ -10,7 +10,7 @@ public:
    virtual void init(int w, int h) ;
    virtual void setcell(int x, int y) ;
    virtual int getpopulation() ;
-   virtual int nextstep(int, int) ;
+   virtual int nextstep(int, int, int) ;
    virtual void swap() ;
    void createit() ;
    int created ;
@@ -68,7 +68,7 @@ void list3algo::createit() {
       created = 1 ;
    }
 }
-int list3algo::nextstep(int id, int nid) {
+int list3algo::nextstep(int id, int nid, int needpop) {
    int r = 0 ;
    if (nid != 1)
       error("! multithreading not yet supported") ;
@@ -76,9 +76,9 @@ int list3algo::nextstep(int id, int nid) {
       createit() ;
    a1.clear() ;
    int r0=0, r1=0, r2=0 ;
-   int wy = END ;
-   while (a0[r0] != END) {
-      int y = min(a0[r0]+1, min(a0[r1], a0[r2]-1)) ;
+    int wy = END ;
+    while (a0[r0] != END) {
+	    int y = min(a0[r0]+1, min(a0[r1], a0[r2]-1)) ;
       int p0 = r0+1 ;
       int p1 = r1 ;
       int p2 = r2 ;

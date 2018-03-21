@@ -10,7 +10,7 @@ public:
    virtual void init(int w, int h) ;
    virtual void setcell(int x, int y) ;
    virtual int getpopulation() ;
-   virtual int nextstep(int, int) ;
+   virtual int nextstep(int, int, int) ;
    virtual void swap() ;
    int sorted ;
    vector<pair<int, int> > pts, pts2 ;
@@ -36,7 +36,7 @@ int list2algo::getpopulation() {
    return pts.size() ;
 }
 void list2algo::swap() { }
-int list2algo::nextstep(int id, int nid) {
+int list2algo::nextstep(int id, int nid, int) {
    if (nid != 1)
       error("! multithreading not yet supported") ;
    if (!sorted) {
