@@ -55,11 +55,7 @@ int array4algo::nextstep(int id, int nid) {
    for (int i=1; i+1<h; i++)
       for (int j=1; j+1<w; j++) {
          unsigned char n = u1[i+2][j+2] - u1[i+2][j-1] - u1[i-1][j+2] + u1[i-1][j-1] ;
-         if (n == 3 || (n == 4 && u0[i][j])) {
-            u0[i][j] = 1 ;
-            pop++ ;
-         } else
-            u0[i][j] = 0 ;
+         pop += u0[i][j] = (n == 3 || (n == 4 && u0[i][j])) ;
       }
    return pop ;
 }

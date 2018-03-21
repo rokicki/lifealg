@@ -49,11 +49,8 @@ int arrayalgo::nextstep(int id, int nid) {
       unsigned char *wr = u1 + y*w + 1 ;
       for (int x=1; x+1<w; x++, r++, wr++) {
          int n = r[-w-1]+r[-w]+r[-w+1]+r[-1]+r[1]+r[w-1]+r[w]+r[w+1] ;
-         if (n == 3 || (n == 2 && *r)) {
-            pop++ ;
-            *wr = 1 ;
-         } else
-            *wr = 0 ;
+         *wr = (n == 3 || (n == 2 && *r)) ;
+         pop += *wr ;
       }
    }
    return pop ;

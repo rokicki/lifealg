@@ -53,12 +53,7 @@ int array3algo::nextstep(int id, int nid) {
       for (int x=1; x+1<w; x++) {
          unsigned char n = u1[(y+1)*w+(x+2)] - u1[(y+1)*w+(x-1)] -
                            u1[(y-2)*w+(x+2)] + u1[(y-2)*w+(x-1)] ;
-         if (n == 3 || (n == 4 && u0[y*w+x])) {
-            pop++ ;
-            u0[y*w+x] = 1 ;
-         } else {
-            u0[y*w+x] = 0 ;
-         }
+         pop += u0[y*w+x] = (n == 3 || (n == 4 && u0[y*w+x])) ;
       }
    }
    return pop ;
