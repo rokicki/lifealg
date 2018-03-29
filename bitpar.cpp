@@ -30,8 +30,8 @@ void bitparalgo::init(int w_, int h_) {
    h = h_ ;
    wordwidth = (w + 63) >> 6 ;
    wh = wordwidth * h ;
-   u0 = (ull *)calloc(wordwidth*sizeof(ull), h) ;
-   u1 = (ull *)calloc(wordwidth*sizeof(ull), h) ;
+   u0 = (ull *)calloc(wordwidth*sizeof(ull), h+1) ;
+   u1 = (ull *)calloc(wordwidth*sizeof(ull), h+1) ;
 }
 void bitparalgo::setcell(int x, int y) {
    u0[(x>>6)*h+y] |= 1LL << (x & 63) ;
@@ -77,7 +77,8 @@ int bitparalgo::nextstep(int i, int n, int needpop) {
       add3(w1, w1l, w1r, w10, w11) ;
       for (int j=1; j+1<h; j += 2, col += 2, pcol += 2, ncol += 2, wcol += 2) {
          ull w2 = col[1] ;
-         ull w3 = col[2] ;
+         ull w3 = 0 ;
+         w3 = col[2] ;
          ull w2l = w2 << 1 ;
          ull w3l = w3 << 1 ;
          ull w2r = w2 >> 1 ;

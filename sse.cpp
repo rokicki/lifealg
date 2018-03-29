@@ -33,8 +33,8 @@ void ssealgo::init(int w_, int h_) {
    h = h_ ;
    wordwidth = (w + lifewordwidth-1) >> shift ;
    wh = wordwidth * h ;
-   u0 = (lifeword *)calloc(wordwidth*sizeof(lifeword), h) ;
-   u1 = (lifeword *)calloc(wordwidth*sizeof(lifeword), h) ;
+   u0 = (lifeword *)calloc(wordwidth*sizeof(lifeword), h+1) ;
+   u1 = (lifeword *)calloc(wordwidth*sizeof(lifeword), h+1) ;
 }
 void ssealgo::setcell(int x, int y) {
    static lifeword bigbig = _mm_set_epi64x(1, 0) ;

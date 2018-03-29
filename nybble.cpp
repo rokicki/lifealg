@@ -30,8 +30,8 @@ void nybblealgo::init(int w_, int h_) {
    h = h_ ;
    wordwidth = (w + 15) >> 4 ;
    wh = wordwidth * h ;
-   u0 = (ull *)calloc(wordwidth*sizeof(ull), h) ;
-   u1 = (ull *)calloc(wordwidth*sizeof(ull), h) ;
+   u0 = (ull *)calloc(wordwidth*sizeof(ull), h+1) ;
+   u1 = (ull *)calloc(wordwidth*sizeof(ull), h+1) ;
 }
 void nybblealgo::setcell(int x, int y) {
    u0[(x >> 4) + wordwidth * y] |= 1LL << (4 * (x & 15)) ;

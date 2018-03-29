@@ -41,8 +41,8 @@ void lookup4algo::init(int w_, int h_) {
    h = h_ ;
    wordwidth = (w + 63) >> 6 ;
    wh = wordwidth * h ;
-   u0 = (ull *)calloc(wordwidth*sizeof(ull), h) ;
-   u1 = (ull *)calloc(wordwidth*sizeof(ull), h) ;
+   u0 = (ull *)calloc(wordwidth*sizeof(ull), h+1) ;
+   u1 = (ull *)calloc(wordwidth*sizeof(ull), h+1) ;
    for (int i=0; i<65536; i++)
       lookuptab[i] = slowcalc(i) + (slowcalc(i >> 1) << 1) +
                      (slowcalc(i>>4) << 4) + (slowcalc(i>>5) << 5) ;
@@ -77,21 +77,15 @@ int lookup4algo::nextstep(int i, int n, int needpop) {
       for (int j=1; j+1<h; j += 2, col += 2, pcol += 2, ncol += 2, wcol += 2) {
          ull p2l = col[1] << 1 ;
          ull p2r = col[1] >> 1 ;
-         ull p3l = 0 ;
-         ull p3r = 0 ;
-         if (j+2 < h) {
-            p3l = col[2] << 1 ;
-            p3r = col[2] >> 1 ;
-         }
+         ull p3l = col[2] << 1 ;
+         ull p3r = col[2] >> 1 ;
          if (i > 0) {
             p2l += pcol[1] >> 63 ;
-            if (j+2 < h)
-               p3l += pcol[2] >> 63 ;
+            p3l += pcol[2] >> 63 ;
          }
          if (i+1 < wordwidth) {
             p2r += ncol[1] << 63 ;
-            if (j+2 < h)
-               p3r += ncol[2] << 63 ;
+            p3r += ncol[2] << 63 ;
          }
          ull ng1 = 0 ;
          ull ng2 = 0 ;
