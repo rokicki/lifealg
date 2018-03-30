@@ -27,8 +27,8 @@ void array3algo::init(int w_, int h_) {
    w = w_ ;
    h = h_ ;
    wh = w * h ;
-   u0 = (unsigned char *)calloc(1, wh+w) ;
-   u1 = (unsigned char *)calloc(1, wh+w) ;
+   u0 = (unsigned char *)calloc(1, wh+w+16) ;
+   u1 = (unsigned char *)calloc(1, wh+w+16) ;
 }
 void array3algo::setcell(int x, int y) {
    u0[y * w + x] = 1 ;
