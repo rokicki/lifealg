@@ -3,6 +3,7 @@
 #include <cstdlib>
 #include <vector>
 #include <algorithm>
+#include <string.h>
 using namespace std ;
 typedef unsigned long long ull ;
 union node {
