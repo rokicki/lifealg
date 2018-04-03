@@ -1,3 +1,4 @@
+#ifdef __AVX2__
 #include "lifealgo.h"
 #include "util.h"
 #include <algorithm>
@@ -166,3 +167,4 @@ int avx2algo::nextstep(int id, int n, int needpop) {
    }
    return r ;
 }
+#endif
