@@ -123,12 +123,14 @@ int ssealgo::nextstep(int id, int n, int needpop) {
          add3(w11, w21, a1, b1, b2) ;
          add2(b0, w00, a0, a1) ;
          add3(b1, w01, a1, a1, a2) ;
-         ng1 = (~(a0 ^ a1)) & (a1 ^ a2 ^ b2) & (w1 | a1) ;
+         a2 ^= b2 ;
+         ng1 = (a0 ^ a2) & (a1 ^ a2) & (w1 | a1) ;
          wcol[0] = ng1 ;
          add3(w3, w3l, w3r, w30, w31) ;
          add2(b0, w30, a0, a1) ;
          add3(b1, w31, a1, a1, a2) ;
-         ng2 = (~(a0 ^ a1)) & (a1 ^ a2 ^ b2) & (w2 | a1) ;
+         a2 ^= b2 ;
+         ng2 = (a0 ^ a2) & (a1 ^ a2) & (w2 | a1) ;
          wcol[1] = ng2 ;
          if (needpop)
             r += popcount128(ng1) + popcount128(ng2) ;
