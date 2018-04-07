@@ -37,6 +37,7 @@ void avx2algo::init(int w_, int h_) {
    wh = wordwidth * h ;
    u0 = (lifeword *)calloc(wordwidth*sizeof(lifeword), h+1) ;
    u1 = (lifeword *)calloc(wordwidth*sizeof(lifeword), h+1) ;
+   printf("Addresses are %llx and %llx\n", (long long)u0, (long long)u1) ;
    union {
       lifeword w ;
       unsigned long long ll[4] ;
