@@ -201,7 +201,7 @@ static ull calc(ull nw, ull ne, ull sw, ull se) {
                 ((ne >> 1) & 0x0080808080808080LL) +
                 ((sw << 55) & 0x7f00000000000000LL) +
                  (se << 63) ;
-   return (~(a0 ^ a1)) & (a1 ^ a2) & (curgen | a1) ;
+   return (a0 ^ a2) & (a1 ^ a2) & (curgen | a1) ;
 }
 node *treealgo::calculate(node *nw, node *ne, node *sw, node *se, int d) {
    if (nw == 0 && ne == 0 && sw == 0 && se == 0)

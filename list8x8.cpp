@@ -135,7 +135,7 @@ static ull calc(ull nw, ull ne, ull sw, ull se) {
                 ((ne >> 1) & 0x0080808080808080LL) +
                 ((sw << 55) & 0x7f00000000000000LL) +
                  (se << 63) ;
-   return (~(a0 ^ a1)) & (a1 ^ a2) & (curgen | a1) ;
+   return (a0 ^ a2) & (a1 ^ a2) & (curgen | a1) ;
 }
 int list8x8algo::nextstep(int id, int nid, int needpop) {
    int r = 0 ;
