@@ -8,7 +8,7 @@ using namespace std ;
 typedef __m256i lifeword ;
 const int lifewordwidth = 256 ;
 const int shift = 8 ;
-class avx2algo : public lifealgo {
+class avx23algo : public lifealgo {
 public:
    virtual void init(int w, int h) ;
    virtual void setcell(int x, int y) ;
@@ -19,18 +19,18 @@ public:
    long long wh ;
    lifeword *u0, *u1 ;
 } ;
-static class avx2algofactory : public lifealgofactory {
+static class avx23algofactory : public lifealgofactory {
 public:
-   avx2algofactory() ;
+   avx23algofactory() ;
    virtual lifealgo *createInstance() {
-      return new avx2algo() ;
+      return new avx23algo() ;
    }
 } factory ;
-avx2algofactory::avx2algofactory() {
-   registerAlgo("avx2", &factory) ;
+avx23algofactory::avx23algofactory() {
+   registerAlgo("avx23", &factory) ;
 }
 static lifeword lobit256, hibit256, notlobit256, nothibit256 ;
-void avx2algo::init(int w_, int h_) {
+void avx23algo::init(int w_, int h_) {
    w = w_ ;
    h = h_ ;
    wordwidth = (w + lifewordwidth-1) >> shift ;
@@ -52,7 +52,7 @@ void avx2algo::init(int w_, int h_) {
    hibit256 = t.w ;
    nothibit256 = ~t.w ;
 }
-void avx2algo::setcell(int x, int y) {
+void avx23algo::setcell(int x, int y) {
    union {
        lifeword w ;
        unsigned long long ll[4] ;
@@ -76,7 +76,7 @@ static inline int popcount256(lifeword n) {
            __builtin_popcountll(t.ll[2]) +
            __builtin_popcountll(t.ll[3]) ;
 }
-int avx2algo::getpopulation() {
+int avx23algo::getpopulation() {
    int r = 0 ;
    for (int i=0; i<wh; i++)
       r += popcount256(u0[i]) ;
@@ -107,14 +107,14 @@ static lifeword bigrightshift(lifeword v) {
    return lobit256 & _mm256_srli_epi64(_mm256_permute4x64_epi64(v, 0x93), 63) ;
 }
 static lifeword zero256 ;
-void avx2algo::swap() { ::swap(u0, u1) ; }
-int avx2algo::nextstep(int id, int n, int needpop) {
+void avx23algo::swap() { ::swap(u0, u1) ; }
+int avx23algo::nextstep(int id, int n, int needpop) {
    int r = 0 ;
    int loi = id * wordwidth / n ;
    int hii = (id + 1) * wordwidth / n ;
    for (int i=loi; i<hii; i++) {
-      lifeword w00 = zero256 ;
-      lifeword w01 = zero256 ;
+      lifeword w300 = zero256 ;
+      lifeword w301 = zero256 ;
       lifeword *col = u0 + i * h + 1 ;
       lifeword *pcol = u0 + (i-1) * h + 1 ;
       lifeword *ncol = u0 + (i+1) * h + 1 ;
@@ -126,45 +126,36 @@ int avx2algo::nextstep(int id, int n, int needpop) {
          w1l += bigrightshift(*pcol) ;
       if (i+1 < wordwidth)
          w1r += bigleftshift(*ncol) ;
-      lifeword w10, w11 ;
-      add3(w1, w1l, w1r, w10, w11) ;
-      for (int j=1; j+1<h; j += 2, col += 2, pcol += 2, ncol += 2, wcol += 2) {
+      lifeword w210, w211, w310, w311 ;
+      add2(w1l, w1r, w210, w211) ;
+      add2(w1, w210, w310, w311) ;
+      w311 |= w211 ;
+#pragma unroll 8
+      for (int j=1; j+1<h; j++, col++, pcol++, ncol++, wcol++) {
          lifeword w2 = col[1] ;
-         lifeword w3 = col[2] ;
          lifeword w2l = leftshift(w2) ;
-         lifeword w3l = leftshift(w3) ;
          lifeword w2r = rightshift(w2) ;
-         lifeword w3r = rightshift(w3) ;
-         if (i > 0) {
+         if (i > 0)
             w2l |= bigrightshift(pcol[1]) ;
-            w3l |= bigrightshift(pcol[2]) ;
-         }
-         if (i+1 < wordwidth) {
+         if (i+1 < wordwidth)
             w2r |= bigleftshift(ncol[1]) ;
-            w3r |= bigleftshift(ncol[2]) ;
-         }
-         lifeword w20, w21, w30, w31, a0, a1, a2, b0, b1, b2, ng1, ng2 ;
-         add3(w2, w2l, w2r, w20, w21) ;
-         add2(w10, w20, b0, a1) ;
-         add3(w11, w21, a1, b1, b2) ;
-         add2(b0, w00, a0, a1) ;
-         add3(b1, w01, a1, a1, a2) ;
-         a2 ^= b2 ;
-         ng1 = (a0 ^ a2) & (a1 ^ a2) & (w1 | a1) ;
+         lifeword w220, w221, w320, w321, a0, a1 ;
+         add2(w2l, w2r, w220, w221) ;
+         add2(w2, w220, w320, w321) ;
+         w321 |= w221 ;
+         add3(w300, w210, w320, a0, a1) ;
+         lifeword ng1 = (a1 ^ w301 ^ w211 ^ w321) &
+                                   ((a1 | w301) ^ (w211 | w321)) & (a0 | w1) ;
          wcol[0] = ng1 ;
-         add3(w3, w3l, w3r, w30, w31) ;
-         add2(b0, w30, a0, a1) ;
-         add3(b1, w31, a1, a1, a2) ;
-         a2 ^= b2 ;
-         ng2 = (a0 ^ a2) & (a1 ^ a2) & (w2 | a1) ;
-         wcol[1] = ng2 ;
          if (needpop)
-            r += popcount256(ng1) + popcount256(ng2) ;
-         w00 = w20 ;
-         w01 = w21 ;
-         w10 = w30 ;
-         w11 = w31 ;
-         w1 = w3 ;
+            r += popcount256(ng1) ;
+         w300 = w310 ;
+         w301 = w311 ;
+         w310 = w320 ;
+         w311 = w321 ;
+         w210 = w220 ;
+         w211 = w221 ;
+         w1 = w2 ;
       }
    }
    return r ;

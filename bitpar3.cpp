@@ -4,7 +4,7 @@
 #include <cstdlib>
 using namespace std ;
 typedef unsigned long long ull ;
-class bitparalgo : public lifealgo {
+class bitpar3algo : public lifealgo {
 public:
    virtual void init(int w, int h) ;
    virtual void setcell(int x, int y) ;
@@ -15,17 +15,17 @@ public:
    long long wh ;
    ull *u0, *u1 ;
 } ;
-static class bitparalgofactory : public lifealgofactory {
+static class bitpar3algofactory : public lifealgofactory {
 public:
-   bitparalgofactory() ;
+   bitpar3algofactory() ;
    virtual lifealgo *createInstance() {
-      return new bitparalgo() ;
+      return new bitpar3algo() ;
    }
 } factory ;
-bitparalgofactory::bitparalgofactory() {
-   registerAlgo("bitpar", &factory) ;
+bitpar3algofactory::bitpar3algofactory() {
+   registerAlgo("bitpar3", &factory) ;
 }
-void bitparalgo::init(int w_, int h_) {
+void bitpar3algo::init(int w_, int h_) {
    w = w_ ;
    h = h_ ;
    wordwidth = (w + 63) >> 6 ;
@@ -33,10 +33,10 @@ void bitparalgo::init(int w_, int h_) {
    u0 = (ull *)calloc(wordwidth*sizeof(ull), h+1) ;
    u1 = (ull *)calloc(wordwidth*sizeof(ull), h+1) ;
 }
-void bitparalgo::setcell(int x, int y) {
+void bitpar3algo::setcell(int x, int y) {
    u0[(x>>6)*h+y] |= 1LL << (x & 63) ;
 }
-int bitparalgo::getpopulation() {
+int bitpar3algo::getpopulation() {
    int r = 0 ;
    for (int i=0; i<wh; i++)
       r += __builtin_popcountll(u0[i]) ;
@@ -54,14 +54,14 @@ static inline void add3(ull a, ull b, ull c,
    add2(t0, c, c0, t2) ;
    c1 = t2 | t1 ;
 }
-void bitparalgo::swap() { ::swap(u0, u1) ; }
-int bitparalgo::nextstep(int i, int n, int needpop) {
+void bitpar3algo::swap() { ::swap(u0, u1) ; }
+int bitpar3algo::nextstep(int i, int n, int needpop) {
    int r = 0 ;
    int loi = i * wordwidth / n ;
    int hii = (i + 1) * wordwidth / n ;
    for (int i=loi; i<hii; i++) {
-      ull w00 = 0 ;
-      ull w01 = 0 ;
+      ull w300 = 0 ;
+      ull w301 = 0 ;
       ull *col = u0 + i * h + 1 ;
       ull *pcol = u0 + (i-1) * h + 1 ;
       ull *ncol = u0 + (i+1) * h + 1 ;
@@ -73,45 +73,36 @@ int bitparalgo::nextstep(int i, int n, int needpop) {
          w1l += *pcol >> (wordwidth-1) ;
       if (i+1 < wordwidth)
          w1r += *ncol << (wordwidth-1) ;
-      ull w10, w11 ;
-      add3(w1, w1l, w1r, w10, w11) ;
-      for (int j=1; j+1<h; j += 2, col += 2, pcol += 2, ncol += 2, wcol += 2) {
+      ull w210, w211, w310, w311 ;
+      add2(w1l, w1r, w210, w211) ;
+      add2(w1, w210, w310, w311) ;
+      w311 |= w211 ;
+#pragma unroll 8
+      for (int j=1; j+1<h; j++, col++, pcol++, ncol++, wcol++) {
          ull w2 = col[1] ;
-         ull w3 = col[2] ;
          ull w2l = w2 << 1 ;
-         ull w3l = w3 << 1 ;
          ull w2r = w2 >> 1 ;
-         ull w3r = w3 >> 1 ;
-         if (i > 0) {
+         if (i > 0)
             w2l |= pcol[1] >> 63 ;
-            w3l |= pcol[2] >> 63 ;
-         }
-         if (i+1 < wordwidth) {
+         if (i+1 < wordwidth)
             w2r |= ncol[1] << 63 ;
-            w3r |= ncol[2] << 63 ;
-         }
-         ull w20, w21, w30, w31, a0, a1, a2, b0, b1, b2, ng1, ng2 ;
-         add3(w2, w2l, w2r, w20, w21) ;
-         add2(w10, w20, b0, a1) ;
-         add3(w11, w21, a1, b1, b2) ;
-         add2(b0, w00, a0, a1) ;
-         add3(b1, w01, a1, a1, a2) ;
-         a2 ^= b2 ;
-         ng1 = (a0 ^ a2) & (a1 ^ a2) & (w1 | a1) ;
+         ull w220, w221, w320, w321, a0, a1 ;
+         add2(w2l, w2r, w220, w221) ;
+         add2(w2, w220, w320, w321) ;
+         w321 |= w221 ;
+         add3(w300, w210, w320, a0, a1) ;
+         ull ng1 = (a1 ^ w301 ^ w211 ^ w321) & ((a1 | w301) ^ (w211 | w321)) &
+                   (a0 | w1) ;
          wcol[0] = ng1 ;
-         add3(w3, w3l, w3r, w30, w31) ;
-         add2(b0, w30, a0, a1) ;
-         add3(b1, w31, a1, a1, a2) ;
-         a2 ^= b2 ;
-         ng2 = (a0 ^ a2) & (a1 ^ a2) & (w2 | a1) ;
-         wcol[1] = ng2 ;
          if (needpop)
-            r += __builtin_popcountll(ng1) + __builtin_popcountll(ng2) ;
-         w00 = w20 ;
-         w01 = w21 ;
-         w10 = w30 ;
-         w11 = w31 ;
-         w1 = w3 ;
+            r += __builtin_popcountll(ng1) ;
+         w300 = w310 ;
+         w301 = w311 ;
+         w310 = w320 ;
+         w311 = w321 ;
+         w210 = w220 ;
+         w211 = w221 ;
+         w1 = w2 ;
       }
    }
    return r ;
