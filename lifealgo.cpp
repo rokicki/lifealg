@@ -20,6 +20,9 @@ double duration() {
    start = now ;
    return r ;
 }
+double timestamp() {
+   return walltime() - start ;
+}
 map<string, lifealgofactory*> *factories ;
 void registerAlgo(const char *name, lifealgofactory *laf) {
    if (factories == 0)
@@ -28,6 +31,7 @@ void registerAlgo(const char *name, lifealgofactory *laf) {
 }
 static int numthreads = 1 ;
 int verbose = 0 ;
+double maxtime ;
 int main(int argc, char *argv[]) {
    int inc = 1 ;
    char *rle = 0 ;
@@ -79,6 +83,11 @@ case 'm':
 case 'v':
          verbose++ ;
          break ;
+case 'T':
+         maxtime = atof(argv[1]) ;
+         argc-- ;
+         argv++ ;
+         break ;
       }
    }
    const char *algo = argv[1] ;
@@ -113,14 +122,19 @@ case 'v':
       else
          pop = doparthreads(la) ;
       g += inc ;
-      if (verbose)
+      if (verbose) {
+         if (verbose > 1)
+            cout << timestamp() << " " ;
          cout << g << " " << pop << endl << flush ;
+      }
       if (hyperspeed && inc < (1<<30)) {
          inc += inc ;
          la->setinc(inc) ;
       }
+      if (maxtime > 0 && timestamp() > maxtime)
+         break ;
    }
-   double tim = duration() ;
+   double tim = timestamp() ;
    double gps = finalg / tim ;
    double cgps = width * (double)height * (double)finalg / tim ;
    cout << "Final pop is " << pop << " time " << tim << " gps " << gps <<
