@@ -106,6 +106,8 @@ void ulifelibalgo::swap() { }
 int ulifelibalgo::nextstep(int id, int nid, int needpop) {
    if (nid != 1)
       error("! multithreading not supported") ;
+   if (increment & 1)
+      error("! odd increments not supported") ;
    pat.advance(0, 0, increment) ;
    if (needpop)
       return getpopulation() ;
