@@ -1,3 +1,4 @@
+#ifdef __AVX2__
 #include "lifealgo.h"
 #include <algorithm>
 #include <cstdlib>
@@ -242,3 +243,4 @@ int list16x16algo::nextstep(int id, int nid, int needpop) {
    lw0.swap(lw1) ;
    return r ;
 }
+#endif
