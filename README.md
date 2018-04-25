@@ -33,4 +33,4 @@ The following algorithm only supports even increments:
 
 Only a few algorithms support multithreading.
 
-Results are in [results.html](results.html).
+Results are in [results.html](http://htmlpreview.github.io/?https://github.com/rokicki/lifealg/blob/master/results.html).
