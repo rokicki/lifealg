@@ -114,15 +114,14 @@ static inline void add3(ull a, ull b, ull c,
  *   in the four provided cells; each is an 8x8 universe.  We use bit tricks.
  */
 static ull calc(ull nw, ull ne, ull sw, ull se) {
-   ull n0, n1, s0, s1, a0, a1, a2, c1, b1, nw0, sw0 ;
-   nw0 = ((nw >> 1) & 0x7f7f7f7f7f7f7f7fLL) + ((ne << 7) & 0x8080808080808080LL) ;
-   sw0 = ((sw >> 1) & 0x7f7f7f7f7f7f7f7fLL) + ((se << 7) & 0x8080808080808080LL) ;
-   add3(nw, nw0,
-        ((nw >> 2) & 0x3f3f3f3f3f3f3f3fLL) + ((ne << 6) & 0xc0c0c0c0c0c0c0c0LL),
-        n0, n1) ;
-   add3(sw, sw0,
-        ((sw >> 2) & 0x3f3f3f3f3f3f3f3fLL) + ((se << 6) & 0xc0c0c0c0c0c0c0c0LL),
-        s0, s1) ;
+   ull n0, n1, s0, s1, a0, a1, a2, c1, b1 ;
+   ull nw0 = ((nw >> 1) & 0x7f7f7f7f7f7f7f7fLL) + ((ne << 7) & 0x8080808080808080LL) ;
+   ull nw1 = ((nw >> 2) & 0x3f3f3f3f3f3f3f3fLL) + ((ne << 6) & 0xc0c0c0c0c0c0c0c0LL) ;
+   ull sw0 = ((sw >> 1) & 0x7f7f7f7f7f7f7f7fLL) + ((se << 7) & 0x8080808080808080LL) ;
+   ull sw1 = ((sw >> 2) & 0x3f3f3f3f3f3f3f3fLL) + ((se << 6) & 0xc0c0c0c0c0c0c0c0LL) ;
+   ull curgen = (nw0 >> 8) + (sw0 << 56) ;
+   add3(nw, nw0, nw1, n0, n1) ;
+   add3(sw, sw0, sw1, s0, s1) ;
    ull n10 = (n0 >> 8) + (s0 << 56) ;
    ull n11 = (n1 >> 8) + (s1 << 56) ;
    ull n20 = (n0 >> 16) + (s0 << 48) ;
@@ -131,7 +130,6 @@ static ull calc(ull nw, ull ne, ull sw, ull se) {
    add3(n1, n11, n21, b1, a2) ;
    a1 = b1 ^ c1 ;
    a2 ^= b1 & c1 ;
-   ull curgen = (nw0 >> 8) + (sw0 << 56) ;
    return (a0 ^ a2) & (a1 ^ a2) & (curgen | a1) ;
 }
 int list8x8algo::nextstep(int id, int nid, int needpop) {
