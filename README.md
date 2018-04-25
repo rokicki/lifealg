@@ -14,7 +14,16 @@ Sample run:
 
 Algorithms that should work are:
 
-array array2 lookup lookup2 nybble bitpar sse qlife hlife lifelib ulifelib
+array array2 array3 array4
+avx2 avx22 avx23
+bitpar bitpar2 bitpar3
+hlife qlife
+lifelib ulifelib
+list list2 list3 list8x8 list16x16
+lookup lookup2 lookup4
+nybble
+sse sse2 sse3
+tree
 
 Some limitations:
 
@@ -22,6 +31,6 @@ The following algorithm only supports even increments:
 
    ulifelib
 
-The following algorithms don't support multithreading:
+Only a few algorithms support multithreading.
 
-   qlife hlife lifelib ulifelib
+Results are in [results.html](results.html).
