@@ -138,14 +138,13 @@ static inline void add3(lifeword a, lifeword b, lifeword c,
  */
 static lifeword calc(lifeword nw, lifeword ne, lifeword sw, lifeword se) {
    lifeword w0, w1, e0, e1, a0, a1, a2, c1, b1 ;
-   add3(nw,
-        _mm256_alignr_epi8(_mm256_permute2x128_si256(nw,sw,0x21),nw,2),
-        _mm256_alignr_epi8(_mm256_permute2x128_si256(nw,sw,0x21),nw,4),
-        w0, w1) ;
-   add3(ne,
-        _mm256_alignr_epi8(_mm256_permute2x128_si256(ne,se,0x21),ne,2),
-        _mm256_alignr_epi8(_mm256_permute2x128_si256(ne,se,0x21),ne,4),
-        e0, e1) ;
+   lifeword nw0 = _mm256_alignr_epi8(_mm256_permute2x128_si256(nw,sw,0x21),nw,2) ;
+   lifeword nw1 = _mm256_alignr_epi8(_mm256_permute2x128_si256(nw,sw,0x21),nw,4) ;
+   lifeword ne0 = _mm256_alignr_epi8(_mm256_permute2x128_si256(ne,se,0x21),ne,2) ;
+   lifeword ne1 = _mm256_alignr_epi8(_mm256_permute2x128_si256(ne,se,0x21),ne,4) ;
+   lifeword curgen = _mm256_srli_epi16(nw0, 1) | _mm256_slli_epi16(ne0, 15) ;
+   add3(nw, nw0, nw1, w0, w1) ;
+   add3(ne, ne0, ne1, e0, e1) ;
    lifeword n10 = _mm256_srli_epi16(w0, 1) | _mm256_slli_epi16(e0, 15) ;
    lifeword n11 = _mm256_srli_epi16(w1, 1) | _mm256_slli_epi16(e1, 15) ;
    lifeword n20 = _mm256_srli_epi16(w0, 2) | _mm256_slli_epi16(e0, 14) ;
@@ -154,9 +153,6 @@ static lifeword calc(lifeword nw, lifeword ne, lifeword sw, lifeword se) {
    add3(w1, n11, n21, b1, a2) ;
    a1 = b1 ^ c1 ;
    a2 ^= b1 & c1 ;
-   lifeword curgen = (_mm256_srli_epi16(nw, 1) | _mm256_slli_epi16(ne, 15)) ;
-   curgen = _mm256_alignr_epi8(_mm256_permute2x128_si256(curgen,
-      (_mm256_srli_epi16(sw, 1) | _mm256_slli_epi16(se, 15)), 0x21),curgen,2) ;
    return (a0 ^ a2) & (a1 ^ a2) & (curgen | a1) ;
 }
 int list16x16algo::nextstep(int id, int nid, int needpop) {
