@@ -56,7 +56,7 @@ static inline int iszero(lifeword n) {
 }
 int list16x16algo::getpopulation() {
    if (!created)
-      return pts.size() ;
+      createit() ;
    int r = 0 ;
    for (size_t i=0; i<lw0.size(); i++)
       r += popcount256(lw0[i]) ;

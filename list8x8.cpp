@@ -41,7 +41,7 @@ static int popcount64(ull v) {
 }
 int list8x8algo::getpopulation() {
    if (!created)
-      return pts.size() ;
+      createit() ;
    int r = 0 ;
    int at = 0 ;
    while (a0[at] != END) { // for each row

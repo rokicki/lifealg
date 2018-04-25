@@ -35,7 +35,7 @@ void list3algo::setcell(int x, int y) {
 }
 int list3algo::getpopulation() {
    if (!created)
-      return pts.size() ;
+      createit() ;
    int r = 0 ;
    int at = 0 ;
    while (a0[at] != END) { // for each row
