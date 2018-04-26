@@ -115,8 +115,13 @@ case 'T':
    int pop = la->getpopulation() ;
    cout << "Initialized in " << duration() << " population = " << pop << endl ;
    int finalg = 0 ;
+   long long realinc = inc ;
+   long long realgen = 0 ;
    for (int g=0; g < maxgens; ) {
       finalg += inc ;
+      realgen += realinc ;
+      if (realgen >= 1LL << 31)
+         break ;
       if (numthreads <= 1)
          pop = la->nextstep() ;
       else
