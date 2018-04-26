@@ -135,6 +135,7 @@ case 'T':
       if (hyperspeed && inc < (1<<30)) {
          inc += inc ;
          la->setinc(inc) ;
+         realinc += realinc ;
       }
       if (maxtime > 0 && timestamp() > maxtime)
          break ;
