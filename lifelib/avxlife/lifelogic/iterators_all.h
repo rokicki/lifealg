@@ -91,7 +91,7 @@ namespace apg {
     uint64_t uli_valid_mantissa(int rule) {
         switch (rule) {
             case 0 :
-                return 255;
+                return 511;
         }
         return 3;
     }

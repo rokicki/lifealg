@@ -928,9 +928,9 @@ def main():
             if m is None:
                 f.write('                return 3;\n')
             elif (r[:2] == 'b0'):
-                f.write('                return 5;\n')
+                f.write('                return 341;\n')
             else:
-                f.write('                return 255;\n')
+                f.write('                return 511;\n')
         f.write('        }\n')
         f.write('        return 3;\n')
         f.write('    }\n\n')
