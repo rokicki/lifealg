@@ -114,3 +114,62 @@ int ulifelibalgo::nextstep(int id, int nid, int needpop) {
    else
       return 0 ;
 }
+typedef apg::upattern<apg::UTile<2,1>, 16> upat2 ;
+class ulife2libalgo : public lifealgo {
+public:
+   ulife2libalgo() : patbuilt(0), pat() { }
+   virtual void init(int w, int h) ;
+   virtual void setcell(int x, int y) ;
+   virtual int getpopulation() ;
+   virtual int nextstep(int, int, int) ;
+   virtual void swap() ;
+   virtual void setinc(int inc) {
+      lifealgo::setinc(inc) ;
+      if (inc & 1)
+         error("! odd increments not supported") ;
+   }
+   virtual int nextstep() { 
+      return nextstep(0, 1, 1) ;
+   }
+   void buildpat() ;
+   apg::bitworld bw ;
+   int patbuilt ;
+   upat2 pat ;
+} ;
+static class ulife2libalgofactory : public lifealgofactory {
+public:
+   ulife2libalgofactory() ;
+   virtual lifealgo *createInstance() {
+      return new ulife2libalgo() ;
+   }
+} u2factory ;
+ulife2libalgofactory::ulife2libalgofactory() {
+   registerAlgo("ulife2lib", &u2factory) ;
+}
+void ulife2libalgo::init(int w_, int h_) { }
+void ulife2libalgo::setcell(int x, int y) {
+   bw.setcell(x, y, 1) ;
+}
+void ulife2libalgo::buildpat() {
+   vector<apg::bitworld> planes ;
+   planes.push_back(bw) ;
+   pat.insertPattern(planes) ;
+   patbuilt = 1 ;
+}
+int ulife2libalgo::getpopulation() {
+   if (!patbuilt)
+      buildpat() ;
+   return pat.totalPopulation() ;
+}
+void ulife2libalgo::swap() { }
+int ulife2libalgo::nextstep(int id, int nid, int needpop) {
+   if (nid != 1)
+      error("! multithreading not supported") ;
+   if (increment & 1)
+      error("! odd increments not supported") ;
+   pat.advance(0, 0, increment) ;
+   if (needpop)
+      return getpopulation() ;
+   else
+      return 0 ;
+}
