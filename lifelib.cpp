@@ -163,12 +163,7 @@ void ulife2libalgo::swap() { }
 int ulife2libalgo::nextstep(int id, int nid, int needpop) {
    if (nid != 1)
       error("! multithreading not supported") ;
-   if (increment > 64) {
-      for (int i=0; i<increment; i+=64)
-         pat.advance(0, 0, 64) ;
-   } else {
-      pat.advance(0, 0, increment) ;
-   }
+   pat.advance(0, 0, increment) ;
    if (needpop)
       return getpopulation() ;
    else
