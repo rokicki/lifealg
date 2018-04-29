@@ -906,10 +906,15 @@ G_INT64 qlifealgo::find_set_bits(supertile *p, int lev, int gm1) {
          for (i=0; i<4; i++) {
             if (pp->b[i] != emptybrick) {
                for (j=0; j<8; j++) {
+#define USEPOPCOUNT
+#ifdef USEPOPCOUNT
+                  pop += __builtin_popcount(pp->b[i]->d[j+gm1*8]) ;
+#else
                   k = pp->b[i]->d[j+gm1*8] ;
                   if (k)
                     pop += bc[k & 255] + bc[(k >> 8) & 255] +
                       bc[(k >> 16) & 255] + bc[(k >> 24) & 255] ;
+#endif
                }
             }
          }
