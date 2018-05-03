@@ -28,6 +28,7 @@
 #include <string.h>
 #include <iostream>
 using namespace std ;
+extern long long setmaxmem ;
 /*
  *   Power of two hash sizes work fine.
  */
@@ -591,7 +592,10 @@ hlifealgo::hlifealgo() {
    nzeros = 0 ;
    stack = 0 ;
    gsp = 0 ;
-   maxmem = 8LL * 1024 * 1024 * 1024 ;
+   if (setmaxmem != 0)
+      maxmem = setmaxmem * 1024 * 1024 ;
+   else
+      maxmem = 1LL * 1024 * 1024 * 1024 ;
    freenodes = 0 ;
    okaytogc = 0 ;
    totalthings = 0 ;

@@ -5,10 +5,10 @@
 #include <algorithm>
 #include <cstdlib>
 using namespace std ;
-const int memsize = 8000 ;
+extern long long setmaxmem ;
 class lifelibalgo : public lifealgo {
 public:
-   lifelibalgo() : lt(memsize), patbuilt(0), pat(&lt, "") { }
+   lifelibalgo() : lt(setmaxmem == 0 ? 1000 : setmaxmem), patbuilt(0), pat(&lt, "") { }
    virtual void init(int w, int h) ;
    virtual void setcell(int x, int y) ;
    virtual int getpopulation() ;

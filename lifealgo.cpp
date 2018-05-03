@@ -32,6 +32,7 @@ void registerAlgo(const char *name, lifealgofactory *laf) {
 static int numthreads = 1 ;
 int verbose = 0 ;
 double maxtime ;
+long long setmaxmem ;
 int main(int argc, char *argv[]) {
    int inc = 1 ;
    char *rle = 0 ;
@@ -51,6 +52,11 @@ case 't':
          break ;
 case '2':
          hyperspeed++ ;
+         break ;
+case 'M':
+         setmaxmem = atoll(argv[1]) ;
+         argc-- ;
+         argv++ ;
          break ;
 case 'i':
          inc = atoll(argv[1]) ;
