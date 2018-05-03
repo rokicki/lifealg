@@ -11776,10 +11776,10 @@ div#notebook {
 <div class="inner_cell">
 <div class="text_cell_render border-box-sizing rendered_html">
 <h2 id="Life-Algorithm-Shootout">Life Algorithm Shootout<a class="anchor-link" href="#Life-Algorithm-Shootout">&#182;</a></h2><p>This document presents the results of comparing a number of algorithms to run the Game of Life on a CPU.</p>
-<p>Results are from a 2013 Macbook Pro with a 2.8GHz i7 (that supports AVX2).  Results are for 30-second runs of each algorithm.  For the hashlife algorithms I gave each 8GB of memory to work with.</p>
+<p>Results are from a 2013 Macbook Pro with a 2.8GHz i7 (that supports AVX2).  Results are for 120-second runs of each algorithm.  For the hashlife algorithms I gave each 8GB of memory to work with.</p>
 <p>Probably any of these results could be improved by unrolling loops and/or making other improvements; I tried to write fairly straightforward code for each.  I am also including results for Golly's hlife and qlife and Adam Goucher's lifelib and ulifelib.</p>
 <p>These results should be taken with a grain of salt; some of these algorithms have been written to be more general (qlife and hlife), some have extra overhead to maintain history information (lifelib and ulifelib).  All these results are with a single CPU core; use of multiple cores would improve the results for some algorithms.</p>
-<p>All the plots are cumulative generations per second on the y axis, and generation count on the x axis.  All algorithms were terminated after about 30 seconds.</p>
+<p>All the plots are cumulative generations per second on the y axis, and generation count on the x axis.  All algorithms were terminated after about 120 seconds.</p>
 <p>The first two patterns evaluated are large rectangular patterns so we can include the algorithms that only support finite universes (we allow gliders to hit the edge and turn into blocks for the limited universe algorithms).  All subsequent patterns we run only on the algorithms that support unbounded grids.</p>
 <p>All the code can be found on <a href="https://github.com/rokicki/lifealg">https://github.com/rokicki/lifealg</a></p>
 
@@ -21664,7 +21664,7 @@ vpyesAiSq/YAAAAASUVORK5CYII=
 </div>
 <div class="inner_cell">
 <div class="text_cell_render border-box-sizing rendered_html">
-<p>Running Lidka for 30 seconds is silly as it quickly stabilizes after about 30,000 generations, at which point both hashlife-based algorithms run away, with lifelib running faster than hlife.  For the other algorithms, ulifelib is far in the lead, followed by qlife, and then list16x16.</p>
+<p>Running Lidka for 120 seconds is silly as it quickly stabilizes after about 30,000 generations, at which point both hashlife-based algorithms run away, with lifelib running faster than hlife.  For the other algorithms, ulifelib is far in the lead, followed by qlife, and then list16x16.</p>
 
 </div>
 </div>
