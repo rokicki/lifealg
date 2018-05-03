@@ -591,7 +591,7 @@ hlifealgo::hlifealgo() {
    nzeros = 0 ;
    stack = 0 ;
    gsp = 0 ;
-   maxmem = 4LL * 1024 * 1024 * 1024 ;
+   maxmem = 8LL * 1024 * 1024 * 1024 ;
    freenodes = 0 ;
    okaytogc = 0 ;
    totalthings = 0 ;

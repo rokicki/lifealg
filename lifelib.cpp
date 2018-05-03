@@ -5,7 +5,7 @@
 #include <algorithm>
 #include <cstdlib>
 using namespace std ;
-const int memsize = 1000 ;
+const int memsize = 8000 ;
 class lifelibalgo : public lifealgo {
 public:
    lifelibalgo() : lt(memsize), patbuilt(0), pat(&lt, "") { }
