@@ -1,3 +1,4 @@
+#ifndef JUST32BIT
 #include "pattern2.h"
 #include "upattern.h"
 #include "lifealgo.h"
@@ -169,3 +170,4 @@ int ulife2libalgo::nextstep(int id, int nid, int needpop) {
    else
       return 0 ;
 }
+#endif

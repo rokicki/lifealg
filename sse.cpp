@@ -1,3 +1,4 @@
+#ifndef JUST32BIT
 #include "lifealgo.h"
 #include "util.h"
 #include <algorithm>
@@ -143,3 +144,4 @@ int ssealgo::nextstep(int id, int n, int needpop) {
    }
    return r ;
 }
+#endif
