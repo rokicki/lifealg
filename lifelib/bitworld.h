@@ -1,6 +1,6 @@
 #pragma once
 
-#define LIFELIB_VERSION "ll1.23"
+#define LIFELIB_VERSION "ll1.3"
 
 #include "bitbounds.h"
 #include <stdint.h>

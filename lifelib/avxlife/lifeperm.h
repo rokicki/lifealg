@@ -12,6 +12,9 @@ namespace apg {
         0, 0, 0, 0, 4, 0, 0, 0, 2, 0, 0, 0, 6, 0, 0, 0,
         1, 0, 0, 0, 5, 0, 0, 0, 3, 0, 0, 0, 7, 0, 0, 0};
 
+    const static uint8_t __linvperm[] __attribute__((aligned(64))) = {0,
+        8, 4, 12, 1, 9, 5, 13, 2, 10, 6, 14, 3, 11, 7, 15,
+        0, 8, 4, 12, 1, 9, 5, 13, 2, 10, 6, 14, 3, 11, 7, 15};
 
     void transpose_bytes_avx(uint64_t* a, uint64_t* b) {
 
@@ -288,6 +291,60 @@ namespace apg {
         : "r" (a), "r" (b)
         : "xmm0", "xmm1", "xmm2", "xmm3", "xmm4", "xmm5", "xmm6", "xmm7", "memory" );
 
+    }
+
+    void z64_to_r32_centre_ssse3(uint64_t* c, uint32_t* b) {
+        /*
+        *    #ab#
+        *    #cd# <--- [a, b, c, d]
+        */
+
+        asm (
+
+        // Load from memory:
+        "movups (%0), %%xmm0 \n\t"
+        "movups 16(%0), %%xmm2 \n\t"
+
+        // Permute bytes:
+        "pshufb (%2), %%xmm0 \n\t"
+        "pshufb (%2), %%xmm2 \n\t"
+
+        // Dirty hack to perform << 8 and >> 8 during movups:
+        "movups %%xmm0, 1(%1) \n\t"
+        "movups %%xmm0, 15(%1) \n\t"
+        "movups %%xmm2, 33(%1) \n\t"
+        "movups %%xmm2, 47(%1) \n\t"
+
+        : /* no output operands -- implicitly volatile */
+        : "r" (c), "r" (b), "r" (__linvperm)
+        : "xmm0", "xmm1", "xmm2", "xmm3", "memory" );
+    }
+
+    void z64_to_r32_centre_avx(uint64_t* c, uint32_t* b) {
+        /*
+        *    #ab#
+        *    #cd# <--- [a, b, c, d]
+        */
+
+        asm (
+
+        // Load from memory:
+        "vmovups (%0), %%xmm0 \n\t"
+        "vmovups 16(%0), %%xmm2 \n\t"
+
+        // Permute bytes:
+        "vpshufb (%2), %%xmm0, %%xmm0 \n\t"
+        "vpshufb (%2), %%xmm2, %%xmm2 \n\t"
+
+        // Dirty hack to perform << 8 and >> 8 during movups:
+        "vmovups %%xmm0, 1(%1) \n\t"
+        "vmovups %%xmm0, 15(%1) \n\t"
+        "vmovups %%xmm2, 33(%1) \n\t"
+        "vmovups %%xmm2, 47(%1) \n\t"
+
+        : /* no output operands -- implicitly volatile */
+        : "r" (c), "r" (b), "r" (__linvperm)
+        : "xmm0", "xmm1", "xmm2", "xmm3", "memory" );
     }
 
     void r32_centre_to_z64_ssse3(uint32_t* b, uint64_t* c) {

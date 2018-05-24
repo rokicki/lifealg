@@ -3,22 +3,23 @@
 
 namespace apg {
 
-    class pattern {
+    template<typename I>
+    class basepattern {
         /*
         * Patterns with dynamic garbage collection.
-        * A pattern can be instantiated either from a macrocell file:
+        * A basepattern<I> can be instantiated either from a macrocell file:
         *
-        * pattern x(&lt, "filename.mc");
+        * basepattern<I> x(&lt, "filename.mc");
         *
         * or from an RLE literal:
         *
-        * pattern glider(&lt, "3o$o$bo!", "b3s23");
+        * basepattern<I> glider(&lt, "3o$o$bo!", "b3s23");
         */
 
-        hypernode<uint32_t> hnode;
+        hypernode<I> hnode;
         uint64_t ihandle;
         std::string rulestring;
-        lifetree_abstract<uint32_t>* lab;
+        lifetree_abstract<I>* lab;
 
         public:
 
@@ -27,8 +28,8 @@ namespace apg {
         int64_t dx;
         int64_t dy;
 
-        lifetree_abstract<uint32_t>* getlab() const { return lab; }
-        hypernode<uint32_t> gethnode() const { return hnode; }
+        lifetree_abstract<I>* getlab() const { return lab; }
+        hypernode<I> gethnode() const { return hnode; }
         std::string getrule() const { return rulestring; }
         void setrule(std::string rule) { rulestring = rule; }
 
@@ -40,7 +41,7 @@ namespace apg {
 
         // We include some constructors:
 
-        pattern(lifetree_abstract<uint32_t> *lab, hypernode<uint32_t> hnode, std::string rulestring,
+        basepattern(lifetree_abstract<I> *lab, hypernode<I> hnode, std::string rulestring,
                 int64_t dx, int64_t dy, uint64_t dt, uint64_t minp) {
             this->lab = lab;
             this->ihandle = lab->newihandle(hnode);
@@ -49,7 +50,7 @@ namespace apg {
             this->dt = dt; this->minp = minp; this->dx = dx; this->dy = dy;
         }
 
-        pattern(lifetree_abstract<uint32_t> *lab, hypernode<uint32_t> hnode, std::string rulestring) {
+        basepattern(lifetree_abstract<I> *lab, hypernode<I> hnode, std::string rulestring) {
             this->lab = lab;
             this->ihandle = lab->newihandle(hnode);
             this->hnode = hnode;
@@ -57,7 +58,7 @@ namespace apg {
             this->dt = 0; this->minp = 0; this->dx = 0; this->dy = 0;
         }
 
-        pattern(lifetree_abstract<uint32_t> *lab, std::vector<bitworld> planes, std::string rulestring) {
+        basepattern(lifetree_abstract<I> *lab, std::vector<bitworld> planes, std::string rulestring) {
             this->lab = lab;
             this->hnode = lab->fromplanes(planes);
             this->ihandle = lab->newihandle(this->hnode);
@@ -65,7 +66,7 @@ namespace apg {
             this->dt = 0; this->minp = 0; this->dx = 0; this->dy = 0;
         }
 
-        pattern(lifetree_abstract<uint32_t> *lab, std::string rle, std::string rulestring) {
+        basepattern(lifetree_abstract<I> *lab, std::string rle, std::string rulestring) {
             this->lab = lab;
             this->hnode = lab->fromrle(rle);
             this->ihandle = lab->newihandle(this->hnode);
@@ -73,9 +74,9 @@ namespace apg {
             this->dt = 0; this->minp = 0; this->dx = 0; this->dy = 0;
         }
 
-        pattern(lifetree_abstract<uint32_t> *lab, std::string filename) {
+        basepattern(lifetree_abstract<I> *lab, std::string filename) {
             std::string rule = "b3s23";
-            hypernode<uint32_t> loaded = lab->load_macrocell(filename, rule);
+            hypernode<I> loaded = lab->load_macrocell(filename, rule);
             this->lab = lab;
             this->ihandle = lab->newihandle(loaded);
             this->hnode = loaded;
@@ -83,11 +84,11 @@ namespace apg {
             this->dt = 0; this->minp = 0; this->dx = 0; this->dy = 0;
         }
 
-        // Copy a pattern from a different lifetree:
+        // Copy a basepattern<I> from a different lifetree:
 
-        hypernode<uint32_t> coerce(const pattern &other) const {
-            lifetree_abstract<uint32_t>* lab2 = other.getlab();
-            hypernode<uint32_t> hnode2 = other.gethnode();
+        hypernode<I> coerce(const basepattern<I> &other) const {
+            lifetree_abstract<I>* lab2 = other.getlab();
+            hypernode<I> hnode2 = other.gethnode();
             if (lab2 == lab) {
                 return hnode2;
             } else {
@@ -96,11 +97,11 @@ namespace apg {
             }
         }
 
-        // The pattern class manages resources (the associated lifetree keeps
-        // a handle so that the pattern is saved from garbage-collection);
+        // The basepattern<I> class manages resources (the associated lifetree keeps
+        // a handle so that the basepattern<I> is saved from garbage-collection);
         // these need to be released when appropriate.
 
-        pattern(const pattern &p) {
+        basepattern(const basepattern<I> &p) {
             lab = p.getlab();
             hnode = p.gethnode();
             rulestring = p.getrule();
@@ -108,7 +109,7 @@ namespace apg {
             ihandle = lab->newihandle(hnode);
         }
 
-        pattern& operator=(const pattern &p) {
+        basepattern<I>& operator=(const basepattern<I> &p) {
             hnode = coerce(p);
             lab->sethandle(ihandle, hnode);
             dx = p.dx; dy = p.dy; dt = p.dt; minp = p.minp;
@@ -116,7 +117,7 @@ namespace apg {
             return *this;
         }
 
-        ~pattern() {
+        ~basepattern() {
             lab->delhandle(ihandle);
             lab->threshold_gc();
         }
@@ -125,33 +126,33 @@ namespace apg {
 
         // Pattern advancing:
 
-        pattern advance(std::string rule, uint64_t numgens) {
+        basepattern<I> advance(std::string rule, uint64_t numgens) {
             if (rule == rulestring) {
-                return pattern(lab, lab->advance(hnode, rule, numgens), rule, dx, dy, dt, minp);
+                return basepattern<I>(lab, lab->advance(hnode, rule, numgens), rule, dx, dy, dt, minp);
             } else {
-                return pattern(lab, lab->advance(hnode, rule, numgens), rule);
+                return basepattern<I>(lab, lab->advance(hnode, rule, numgens), rule);
             }
         }
 
-        pattern advance(uint64_t numgens) {
+        basepattern<I> advance(uint64_t numgens) {
             return advance(rulestring, numgens);
         }
 
-        pattern operator[](std::string rule) {
-            return pattern(lab, hnode, rule);
+        basepattern<I> operator[](std::string rule) {
+            return basepattern<I>(lab, hnode, rule);
         }
 
         // Shifts and transformations:
 
-        pattern shift(int64_t x, int64_t y) {
-            return pattern(lab, lab->shift_universe(hnode, x, y), rulestring, dx, dy, dt, minp);
+        basepattern<I> shift(int64_t x, int64_t y) {
+            return basepattern<I>(lab, lab->shift_universe(hnode, x, y), rulestring, dx, dy, dt, minp);
         }
 
-        pattern getchild(uint32_t x) const {
-            return pattern(lab, lab->getchild(hnode, x), rulestring);
+        basepattern<I> getchild(uint32_t x) const {
+            return basepattern<I>(lab, lab->getchild(hnode, x), rulestring);
         }
 
-        pattern transform(std::string tfm, int64_t x, int64_t y) {
+        basepattern<I> transform(std::string tfm, int64_t x, int64_t y) {
             uint8_t perm = 228;
             if ((tfm == "flip") || (tfm == "rot180")) {
                 perm = 27;
@@ -168,36 +169,36 @@ namespace apg {
             } else if ((tfm == "rccw") || (tfm == "rot90")) {
                 perm = 141;
             }
-            return pattern(lab, lab->transform_and_shift(hnode, perm, x, y), rulestring);
+            return basepattern<I>(lab, lab->transform_and_shift(hnode, perm, x, y), rulestring);
         }
 
-        pattern transpose() { return transform("transpose", 0, 0); }
+        basepattern<I> transpose() { return transform("transpose", 0, 0); }
 
-        pattern operator()(int64_t x, int64_t y) {
+        basepattern<I> operator()(int64_t x, int64_t y) {
             return shift(x, y);
         }
 
-        pattern operator()(std::string tfm, int64_t x, int64_t y) {
+        basepattern<I> operator()(std::string tfm, int64_t x, int64_t y) {
             return transform(tfm, x, y);
         }
 
         // Rectangle acquisition/selection/removal:
 
-        pattern subrect(int64_t x, int64_t y, uint64_t width, uint64_t height) {
-            hypernode<uint32_t> rect = lab->rectangle(x, y, width, height);
-            return pattern(lab, lab->boolean_universe(hnode, rect, 0), rulestring);
+        basepattern<I> subrect(int64_t x, int64_t y, uint64_t width, uint64_t height) {
+            hypernode<I> rect = lab->rectangle(x, y, width, height);
+            return basepattern<I>(lab, lab->boolean_universe(hnode, rect, 0), rulestring);
         }
 
-        pattern subrect(int64_t *bbox) {
+        basepattern<I> subrect(int64_t *bbox) {
             return subrect(bbox[0], bbox[1], bbox[2], bbox[3]);
         }
 
-        pattern rmrect(int64_t x, int64_t y, uint64_t width, uint64_t height) {
-            hypernode<uint32_t> rect = lab->rectangle(x, y, width, height);
-            return pattern(lab, lab->boolean_universe(hnode, rect, 3), rulestring);
+        basepattern<I> rmrect(int64_t x, int64_t y, uint64_t width, uint64_t height) {
+            hypernode<I> rect = lab->rectangle(x, y, width, height);
+            return basepattern<I>(lab, lab->boolean_universe(hnode, rect, 3), rulestring);
         }
 
-        pattern rmrect(int64_t *bbox) {
+        basepattern<I> rmrect(int64_t *bbox) {
             return rmrect(bbox[0], bbox[1], bbox[2], bbox[3]);
         }
 
@@ -231,70 +232,70 @@ namespace apg {
 
         // Set operations (mutable):
 
-        void changehnode(hypernode<uint32_t> hn) {
+        void changehnode(hypernode<I> hn) {
             hnode = hn;
             lab->sethandle(ihandle, hnode);
             this->dt = 0; this->minp = 0; this->dx = 0; this->dy = 0;
         }
 
-        pattern& operator&=(const pattern &other) {
+        basepattern<I>& operator&=(const basepattern<I> &other) {
             changehnode(lab->boolean_universe(hnode, coerce(other), 0));
             return *this;
         }
 
-        pattern& operator|=(const pattern &other) {
+        basepattern<I>& operator|=(const basepattern<I> &other) {
             changehnode(lab->boolean_universe(hnode, coerce(other), 1));
             return *this;
         }
 
-        pattern& operator^=(const pattern &other) {
+        basepattern<I>& operator^=(const basepattern<I> &other) {
             changehnode(lab->boolean_universe(hnode, coerce(other), 2));
             return *this;
         }
 
-        pattern& operator-=(const pattern &other) {
+        basepattern<I>& operator-=(const basepattern<I> &other) {
             changehnode(lab->boolean_universe(hnode, coerce(other), 3));
             return *this;
         }
 
-        pattern& operator+=(const pattern &other) {
+        basepattern<I>& operator+=(const basepattern<I> &other) {
             changehnode(lab->boolean_universe(hnode, coerce(other), 1));
             return *this;
         }
 
         // Set operations (immutable):
 
-        pattern conjunction(const pattern &other) {
-            return pattern(lab, lab->boolean_universe(hnode, coerce(other), 0), rulestring);
+        basepattern<I> conjunction(const basepattern<I> &other) {
+            return basepattern<I>(lab, lab->boolean_universe(hnode, coerce(other), 0), rulestring);
         }
 
-        pattern disjunction(const pattern &other) {
-            return pattern(lab, lab->boolean_universe(hnode, coerce(other), 1), rulestring);
+        basepattern<I> disjunction(const basepattern<I> &other) {
+            return basepattern<I>(lab, lab->boolean_universe(hnode, coerce(other), 1), rulestring);
         }
 
-        pattern exclusive_disjunction(const pattern &other) {
-            return pattern(lab, lab->boolean_universe(hnode, coerce(other), 2), rulestring);
+        basepattern<I> exclusive_disjunction(const basepattern<I> &other) {
+            return basepattern<I>(lab, lab->boolean_universe(hnode, coerce(other), 2), rulestring);
         }
 
-        pattern minus(const pattern &other) {
-            return pattern(lab, lab->boolean_universe(hnode, coerce(other), 3), rulestring);
+        basepattern<I> minus(const basepattern<I> &other) {
+            return basepattern<I>(lab, lab->boolean_universe(hnode, coerce(other), 3), rulestring);
         }
 
         // Equality testing:
 
-        bool operator==(const pattern &other) const {
-            hypernode<uint32_t> l = lab->pyramid_down(hnode);
-            hypernode<uint32_t> r = lab->pyramid_down(coerce(other));
-            return ((l.depth == r.depth) && (l.index == r.index));
+        bool operator==(const basepattern<I> &other) const {
+            hypernode<I> l = lab->pyramid_down(hnode);
+            hypernode<I> r = lab->pyramid_down(coerce(other));
+            return (l == r);
         }
 
-        bool operator!=(const pattern &other) const {
+        bool operator!=(const basepattern<I> &other) const {
             return !(*this == other);
         }
 
-        bool empty() const { return (this->hnode.index == 0); }
+        bool empty() const { return (this->hnode.empty()); }
 
-        bool nonempty() const { return (this->hnode.index != 0); }
+        bool nonempty() const { return (this->hnode.nonempty()); }
 
         // Population counts:
 
@@ -308,20 +309,20 @@ namespace apg {
 
         // Pattern matching:
 
-        pattern convolve(const pattern &other) {
-            return pattern(lab, lab->convolve_universe(hnode, coerce(other), false), rulestring);
+        basepattern<I> convolve(const basepattern<I> &other) {
+            return basepattern<I>(lab, lab->convolve_universe(hnode, coerce(other), false), rulestring);
         }
 
-        pattern xor_convolve(const pattern &other) {
-            return pattern(lab, lab->convolve_universe(hnode, coerce(other), true), rulestring);
+        basepattern<I> xor_convolve(const basepattern<I> &other) {
+            return basepattern<I>(lab, lab->convolve_universe(hnode, coerce(other), true), rulestring);
         }
 
-        pattern match(const pattern &c1, const pattern &c0) {
-            return pattern(lab, lab->pattern_match(hnode, coerce(c0), coerce(c1)), rulestring);
+        basepattern<I> match(const basepattern<I> &c1, const basepattern<I> &c0) {
+            return basepattern<I>(lab, lab->pattern_match(hnode, coerce(c0), coerce(c1)), rulestring);
         }
 
-        pattern match(const pattern &c1) {
-            return pattern(lab, lab->pattern_match(hnode, hypernode<uint32_t>(0, 1), coerce(c1)), rulestring);
+        basepattern<I> match(const basepattern<I> &c1) {
+            return basepattern<I>(lab, lab->pattern_match(hnode, hypernode<I>(0, 1), coerce(c1)), rulestring);
         }
 
         // Periodicity detection:
@@ -343,8 +344,8 @@ namespace apg {
             int64_t bbox_orig[4] = {0};
             getrect(bbox_orig);
 
-            pattern x = advance(8);
-            if ((hnode.depth == x.gethnode().depth) && (hnode.index == x.gethnode().index)) {
+            basepattern<I> x = advance(8);
+            if (hnode == x.gethnode()) {
                 this->minp = (rulestring[1] == '0') ? 2 : 1;
                 this->dt = 8;
                 this->dx = 0;
@@ -368,10 +369,10 @@ namespace apg {
                 if (g2) {
                     uint64_t delta = g - g2;
                     // std::cout << "Possible super-period of " << delta << std::endl;
-                    pattern y = advance(delta);
+                    basepattern<I> y = advance(delta);
                     y.getrect(bbox);
-                    hypernode<uint32_t> hnode2 = y.shift(bbox_orig[0] - bbox[0], bbox_orig[1] - bbox[1]).gethnode();
-                    if (hnode.depth == hnode2.depth && hnode.index == hnode2.index) {
+                    hypernode<I> hnode2 = y.shift(bbox_orig[0] - bbox[0], bbox_orig[1] - bbox[1]).gethnode();
+                    if (hnode == hnode2) {
                         // std::cout << "Yes!" << std::endl;
                         this->minp = (rulestring[1] == '0') ? 2 : 1;
                         this->dt = delta;
@@ -435,7 +436,7 @@ namespace apg {
                         if (minp % peterkay) {
                             // Determine whether p^k divides the actual period:
                             uint64_t noverp = dt / it->first;
-                            pattern x = advance(noverp);
+                            basepattern<I> x = advance(noverp);
                             x.getrect(bbox);
                             x = x.shift(bbox_orig[0] - bbox[0], bbox_orig[1] - bbox[1]);
                             if (*this == x) {
@@ -488,7 +489,7 @@ namespace apg {
 
             std::string rep = "#";
             uint64_t p = ascertain_period();
-            pattern x = advance(0);
+            basepattern<I> x = advance(0);
 
             for (uint64_t t = 0; t < p; t++) {
                 if (t != 0) { x = x.advance((rulestring[1] == '0') ? 2 : 1); }
@@ -514,9 +515,9 @@ namespace apg {
             return ss.str();
         }
 
-        pattern advance2(int64_t numgens) {
+        basepattern<I> advance2(int64_t numgens) {
             /*
-            * Advance a pattern by a number of generations. If the pattern
+            * Advance a basepattern<I> by a number of generations. If the basepattern<I>
             * is periodic (i.e. an oscillator or spaceship), a negative value
             * is admissible; otherwise, numgens must be non-negative.
             */
@@ -532,7 +533,7 @@ namespace apg {
             }
         }
 
-        pattern stream(std::vector<int64_t> &spacings) {
+        basepattern<I> stream(std::vector<int64_t> &spacings) {
             /*
             * Construct a spaceship stream where delays between successive
             * gliders are given by the elements of 'spacings'.
@@ -540,7 +541,7 @@ namespace apg {
             * Example usage: glider.stream({0,109,255,94,255,255,92,256,135,0})
             */
             int64_t cum = 0;
-            pattern x = (*this); x -= x;
+            basepattern<I> x = (*this); x -= x;
             for (uint64_t i = 0; i < spacings.size() - 1; i++) {
                 cum -= spacings[i];
                 x += advance2(cum);
@@ -548,31 +549,31 @@ namespace apg {
             return x;
         }
 
-        pattern operator[](int64_t numgens) { return advance2(numgens); }
+        basepattern<I> operator[](int64_t numgens) { return advance2(numgens); }
 
-        pattern tensor(const pattern &other, const pattern &other2) {
-            lifetree_abstract<uint32_t>* lab2 = other.getlab();
-            hypernode<uint32_t> hnode2 = other.gethnode();
+        basepattern<I> tensor(const basepattern<I> &other, const basepattern<I> &other2) {
+            lifetree_abstract<I>* lab2 = other.getlab();
+            hypernode<I> hnode2 = other.gethnode();
             uint32_t delta = hnode2.depth + 4;
-            std::vector<uint32_t> v;
+            std::vector<I> v;
             v.push_back(0);
             v.push_back(hnode2.index);
             v.push_back(other2.gethnode().index);
             v.push_back(hnode2.index);
-            hypernode<uint32_t> hnode3 = lab2->tensor_recurse(hnode, lab, delta, v);
-            return pattern(lab2, hnode3, other.getrule());
+            hypernode<I> hnode3 = lab2->tensor_recurse(hnode, lab, delta, v);
+            return basepattern<I>(lab2, hnode3, other.getrule());
         }
 
-        pattern metafy(const pattern &other, const pattern &other2) {
+        basepattern<I> metafy(const basepattern<I> &other, const basepattern<I> &other2) {
             uint64_t trans = 8 << other.gethnode().depth;
-            pattern x = tensor(other.getchild(0), other2.getchild(0));
+            basepattern<I> x = tensor(other.getchild(0), other2.getchild(0));
             x += tensor(other.getchild(1), other2.getchild(1)).shift(trans, 0);
             x += tensor(other.getchild(2), other2.getchild(2)).shift(0, trans);
             x += tensor(other.getchild(3), other2.getchild(3)).shift(trans, trans);
             return x;
         }
 
-        pattern centre() {
+        basepattern<I> centre() {
             int64_t bbox[4];
             getrect(bbox);
             return shift(-bbox[0]-bbox[2]/2, -bbox[1]-bbox[3]/2);
@@ -584,12 +585,23 @@ namespace apg {
 
     };
 
-    pattern operator+(pattern lhs, const pattern &rhs) { return lhs.disjunction(rhs); }
-    pattern operator-(pattern lhs, const pattern &rhs) { return lhs.minus(rhs); }
-    pattern operator&(pattern lhs, const pattern &rhs) { return lhs.conjunction(rhs); }
-    pattern operator|(pattern lhs, const pattern &rhs) { return lhs.disjunction(rhs); }
-    pattern operator^(pattern lhs, const pattern &rhs) { return lhs.exclusive_disjunction(rhs); }
+    template<typename I>
+    basepattern<I> operator+(basepattern<I> lhs, const basepattern<I> &rhs) { return lhs.disjunction(rhs); }
+    template<typename I>
+    basepattern<I> operator-(basepattern<I> lhs, const basepattern<I> &rhs) { return lhs.minus(rhs); }
+    template<typename I>
+    basepattern<I> operator&(basepattern<I> lhs, const basepattern<I> &rhs) { return lhs.conjunction(rhs); }
+    template<typename I>
+    basepattern<I> operator|(basepattern<I> lhs, const basepattern<I> &rhs) { return lhs.disjunction(rhs); }
+    template<typename I>
+    basepattern<I> operator^(basepattern<I> lhs, const basepattern<I> &rhs) { return lhs.exclusive_disjunction(rhs); }
 
+    // Patterns with 32- and 64-bit nodes:
+    typedef basepattern<uint32_t> pattern32;
+    typedef basepattern<uint64_t> pattern64;
+
+    // By default, use 32-bit nodes:
+    typedef pattern32 pattern;
 
 }
 

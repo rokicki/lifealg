@@ -74,7 +74,7 @@ namespace apg {
             return threshold_gc(gc_threshold);
         }
 
-        virtual kiventry<nicearray<I, 4>, I, lifemeta<I> >* ind2ptr_nonleaf(uint32_t depth, I index) = 0;
+        // virtual kiventry<nicearray<I, 4>, I, lifemeta<I> >* ind2ptr_nonleaf(uint32_t depth, I index) = 0;
         virtual I make_nonleaf(uint32_t depth, nicearray<I, 4> contents) = 0;
         virtual hypernode<I> make_nonleaf_hn(uint32_t depth, nicearray<I, 4> contents) = 0;
         virtual I getpop_recurse(hypernode<I> hnode, I modprime, uint64_t layermask) = 0;
@@ -83,32 +83,8 @@ namespace apg {
         virtual hypernode<I> getchild(hypernode<I> hnode, uint32_t n) = 0;
         virtual uint64_t leafpart(I index, uint32_t part) = 0;
 
-        hypernode<I> pyramid_down(hypernode<I> hnode) {
-
-            if (hnode.depth <= 1) { return hnode; }
-            if (hnode.index == 0) { return hypernode<I>(0, 1); }
-
-            // Extract the pointer for the node and its children:
-            kiventry<nicearray<I, 4>, I, lifemeta<I> >* pptr = ind2ptr_nonleaf(hnode.depth, hnode.index);
-            kiventry<nicearray<I, 4>, I, lifemeta<I> >* pptr_tl = ind2ptr_nonleaf(hnode.depth-1, pptr->key.x[0]);
-            kiventry<nicearray<I, 4>, I, lifemeta<I> >* pptr_tr = ind2ptr_nonleaf(hnode.depth-1, pptr->key.x[1]);
-            kiventry<nicearray<I, 4>, I, lifemeta<I> >* pptr_bl = ind2ptr_nonleaf(hnode.depth-1, pptr->key.x[2]);
-            kiventry<nicearray<I, 4>, I, lifemeta<I> >* pptr_br = ind2ptr_nonleaf(hnode.depth-1, pptr->key.x[3]);
-
-            bool tl_good = (pptr_tl->key.x[0] == 0) && (pptr_tl->key.x[1] == 0) && (pptr_tl->key.x[2] == 0);
-            bool tr_good = (pptr_tr->key.x[0] == 0) && (pptr_tr->key.x[1] == 0) && (pptr_tr->key.x[3] == 0);
-            bool bl_good = (pptr_bl->key.x[0] == 0) && (pptr_bl->key.x[2] == 0) && (pptr_bl->key.x[3] == 0);
-            bool br_good = (pptr_br->key.x[1] == 0) && (pptr_br->key.x[2] == 0) && (pptr_br->key.x[3] == 0);
-
-            if (tl_good && tr_good && bl_good && br_good) {
-                nicearray<I, 4> cc = {pptr_tl->key.x[3], pptr_tr->key.x[2], pptr_bl->key.x[1], pptr_br->key.x[0]};
-                hypernode<I>  hncc = make_nonleaf_hn(hnode.depth-1, cc);
-                // Do this recursively:
-                return pyramid_down(hncc);
-            } else {
-                return hnode;
-            }
-        }
+        virtual hypernode<I> pyramid_down(hypernode<I> hnode) = 0;
+        virtual hypernode<I> pyramid_up(hypernode<I> hnode) = 0;
 
         virtual hypernode<I> demorton_recurse(std::map<uint64_t, uint64_t>::iterator &it,
                                               std::map<uint64_t, uint64_t>::iterator &pe,
@@ -170,29 +146,6 @@ namespace apg {
             return shift_recurse(xcc, ux, uy, sz);
         }
 
-        hypernode<I> pyramid_up(hypernode<I> hnode) {
-
-            I z = 0;
-
-            if (hnode.depth == 0) {
-                nicearray<I, 4> cc = {z, z, z, hnode.index};
-                hypernode<I> hnode2 = make_nonleaf_hn(hnode.depth + 1, cc);
-                return shift_toroidal(hnode2, -1, -1, 3);
-            } else {
-                kiventry<nicearray<I, 4>, I, lifemeta<I> >* pptr = ind2ptr_nonleaf(hnode.depth, hnode.index);
-                nicearray<I, 4> tl = {z, z, z, pptr->key.x[0]};
-                nicearray<I, 4> tr = {z, z, pptr->key.x[1], z};
-                nicearray<I, 4> bl = {z, pptr->key.x[2], z, z};
-                nicearray<I, 4> br = {pptr->key.x[3], z, z, z};
-                nicearray<I, 4> nc = {make_nonleaf(hnode.depth, tl),
-                                      make_nonleaf(hnode.depth, tr),
-                                      make_nonleaf(hnode.depth, bl),
-                                      make_nonleaf(hnode.depth, br)};
-                return make_nonleaf_hn(hnode.depth + 1, nc);
-            }
-
-        }
-
         hypernode<I> pyramid_up(hypernode<I> hnode_initial, uint32_t target_depth) {
             hypernode<I> hnode = hnode_initial;
             while (target_depth > hnode.depth) {
@@ -231,6 +184,18 @@ namespace apg {
         hypernode<I> boolean_recurse(hypernode<I> lnode, hypernode<I> rnode, int operation) {
             std::map<std::pair<std::pair<I, I>, uint32_t>, I> memmap;
             return boolean_recurse(lnode, rnode, operation, &memmap);
+        }
+
+        hypernode<I> breach(hypernode<I> hnode) {
+            if (hnode.index2 == 0) {
+                return hnode;
+            } else if (hnode.index == 0) {
+                return hypernode<I>(hnode.index2, hnode.depth);
+            } else {
+                hypernode<I> i1(hnode.index,  hnode.depth);
+                hypernode<I> i2(hnode.index2, hnode.depth);
+                return boolean_recurse(i1, i2, 1);
+            }
         }
 
         hypernode<I> boolean_universe(hypernode<I> lnode, hypernode<I> rnode, int operation) {

@@ -2,11 +2,13 @@
 #include "pattern2.h"
 #include "upattern.h"
 #include "lifealgo.h"
+#include "streamlife.h"
 #include <vector>
 #include <algorithm>
 #include <cstdlib>
 using namespace std ;
 extern long long setmaxmem ;
+// lifelib
 class lifelibalgo : public lifealgo {
 public:
    lifelibalgo() : lt(setmaxmem == 0 ? 1000 : setmaxmem), patbuilt(0), pat(&lt, "") { }
@@ -56,6 +58,57 @@ int lifelibalgo::nextstep(int id, int nid, int needpop) {
    pat = pat[increment] ;
    return getpopulation() ;
 }
+// streamslifelib
+class slifelibalgo : public lifealgo {
+public:
+   slifelibalgo() : lt(setmaxmem == 0 ? 1000 : setmaxmem), patbuilt(0), pat(&lt, "") { }
+   virtual void init(int w, int h) ;
+   virtual void setcell(int x, int y) ;
+   virtual int getpopulation() ;
+   virtual int nextstep(int, int, int) ;
+   virtual void swap() ;
+   virtual int nextstep() { 
+      return nextstep(0, 1, 1) ;
+   }
+   void buildpat() ;
+   apg::streamtree<uint32_t, 1> lt ;
+   apg::bitworld bw ;
+   int patbuilt ;
+   apg::pattern pat ;
+} ;
+static class slifelibalgofactory : public lifealgofactory {
+public:
+   slifelibalgofactory() ;
+   virtual lifealgo *createInstance() {
+      return new slifelibalgo() ;
+   }
+} sfactory ;
+slifelibalgofactory::slifelibalgofactory() {
+   registerAlgo("slifelib", &sfactory) ;
+}
+void slifelibalgo::init(int w_, int h_) { }
+void slifelibalgo::setcell(int x, int y) {
+   bw.setcell(x, y, 1) ;
+}
+void slifelibalgo::buildpat() {
+   vector<apg::bitworld> planes ;
+   planes.push_back(bw) ;
+   pat = apg::pattern(&lt, planes, "b3s23") ;
+   patbuilt = 1 ;
+}
+int slifelibalgo::getpopulation() {
+   if (!patbuilt)
+      buildpat() ;
+   return pat.popcount(1000000009) ;
+}
+void slifelibalgo::swap() { }
+int slifelibalgo::nextstep(int id, int nid, int needpop) {
+   if (nid != 1)
+      error("! multithreading not supported") ;
+   pat = pat[increment] ;
+   return getpopulation() ;
+}
+// ulifelib
 typedef apg::upattern<apg::VTile28, 28> upat ;
 class ulifelibalgo : public lifealgo {
 public:

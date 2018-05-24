@@ -1,10 +1,13 @@
 #include "classifier.h"
 #include "upattern.h"
+#include "streamlife.h"
 
 int main() {
 
     apg::lifetree<uint32_t, 4> lt(1500);
+    apg::streamtree<uint32_t, 1> st(500);
 
+    /*
     apg::pattern mkn(&lt, "16bo$15b2o$15bo3bo$14bo2bob2o$13b2o5bo$13bo2bo2bo$7bo5b2o4bo$7bobo5b2o"
 "$7bobo6bo4$2o$obo$b2o$17b2o5b2ob3o$16bo3bo2b2ob2obo$16b2o5b2obob2o$17b"
 "2o3bobo$17bo2bo$18bob2o4$6b3o$6bo19bo$7bo19bobo$29b2o$22b2o2bo4bo$22b"
@@ -13,7 +16,7 @@ int main() {
     std::cerr << mkn.apgcode() << std::endl;
 
     return 0;
-
+    */
 
     apg::classifier c(&lt, "b3s23");
 
@@ -58,6 +61,7 @@ int main() {
     std::ofstream out("rubbish3.mc");
     ip46.write_macrocell(out);
 
+    /*
     apg::pattern y(&lt, "4b2o9b2o$3bobo9bobo$3bobob2o3b2obobo$b2o2bob2o3b2obo2b2o$o4bo9bo4bo$6o"
 "b2o3b2ob6o$7bobobobo$2b2ob2o2bobo2b2ob2o$2b2obo3bobo3bob2o$6b3o3b3o2$"
 "6b3o3b3o$2b2obo3bobo3bob2o$2b2ob2o2bobo2b2ob2o$7bobobobo$6ob2o3b2ob6o$"
@@ -66,16 +70,32 @@ int main() {
     std::vector<std::string> parts = c.pbbosc(y, 2, 4);
 
     for (int i = 0; i < parts.size(); i++) { std::cerr << parts[i] << std::endl; }
+    */
 
     apg::pattern x(&lt, "bo$obo$bo8$8bo$6bobo$5b2obo2$4b3o!", "b3s23");
     std::cerr << "Population of Lidka: " << x.popcount((1 << 30) + 3) << std::endl;
     x = x["b3s23"][32768];
     std::cerr << "Population of Lidka: " << x.popcount((1 << 30) + 3) << std::endl;
 
-    x = apg::pattern(&lt, "bo$obo$bo8$8bo$6bobo$5b2obo2$4b3o!", "r1b3t3s3t4");
-    std::cerr << "Population of Lidka: " << x.popcount((1 << 30) + 3) << std::endl;
-    x = x["r1b3t3s3t4"][32768];
-    std::cerr << "Population of Lidka: " << x.popcount((1 << 30) + 3) << std::endl;
+    /*
+    apg::pattern y(&st, "bo$obo$bo8$8bo$6bobo$5b2obo2$4b3o!", "b3s23");
+    */
+    apg::pattern y(&st, "sparked.mc");
+
+    std::cerr << "Population of Sparked at generation 0: " << y.popcount((1 << 30) + 3) << std::endl;
+    for (int i = 0; i < 100; i++) {
+        std::cerr << ".";
+        y = y["b3s23"][4096];
+    }
+    std::cerr << std::endl;
+    std::cerr << "Population of Sparked at generation 409600: " << y.popcount((1 << 30) + 3) << std::endl;
+
+    std::cerr << y.gethnode().index << " " << y.gethnode().index2 << std::endl;
+
+    std::ofstream out2("sparked1.mc");
+    st.write_macrocell(out2, apg::hypernode<uint32_t>(y.gethnode().index, y.gethnode().depth), "b3s23");
+    std::ofstream out3("sparked2.mc");
+    st.write_macrocell(out3, apg::hypernode<uint32_t>(y.gethnode().index2, y.gethnode().depth), "b3s23");
 
     return 0;
 

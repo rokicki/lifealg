@@ -2767,6 +2767,781 @@ namespace b3s23 {
         return (bigdiff == 0);
     }
 
+    bool iterate_sse2_16_12(uint32_t * __restrict__ d, uint32_t * __restrict__ e, uint32_t * __restrict__ h, uint32_t * __restrict__ j, uint32_t * __restrict__ diffs, bool onegen) {
+        if (h) {
+            for (int i = 0; i < 16; i++) {
+                h[i] |= d[i];
+            }
+        }
+        if (j) {
+            for (int i = 0; i < 16; i++) {
+                j[i] &= d[i];
+            }
+        }
+        asm (
+        "mov $0xffffffff, %%ebx \n\t"
+        "movd %%ebx, %%xmm13 \n\t"
+        "mov $0x003ffc00, %%ebx \n\t"
+        "movd %%ebx, %%xmm14 \n\t"
+        "pshufd $1, %%xmm13, %%xmm13 \n\t"
+        "pshufd $0, %%xmm14, %%xmm14 \n\t"
+        "movups (%0), %%xmm5 \n\t"
+        "movdqa %%xmm5, %%xmm0 \n\t"
+        "movdqa %%xmm5, %%xmm1 \n\t"
+        "psrld $1, %%xmm0 \n\t"
+        "pslld $1, %%xmm1 \n\t"
+        "movdqa %%xmm1, %%xmm6 \n\t"
+        "pxor %%xmm0, %%xmm6 \n\t"
+        "movdqa %%xmm1, %%xmm7 \n\t"
+        "pand %%xmm0, %%xmm7 \n\t"
+        "movdqa %%xmm6, %%xmm1 \n\t"
+        "pand %%xmm5, %%xmm1 \n\t"
+        "pxor %%xmm5, %%xmm6 \n\t"
+        "por %%xmm1, %%xmm7 \n\t"
+        "movups 16(%0), %%xmm2 \n\t"
+        "movdqa %%xmm2, %%xmm0 \n\t"
+        "movdqa %%xmm2, %%xmm1 \n\t"
+        "psrld $1, %%xmm0 \n\t"
+        "pslld $1, %%xmm1 \n\t"
+        "movdqa %%xmm1, %%xmm3 \n\t"
+        "pxor %%xmm0, %%xmm3 \n\t"
+        "movdqa %%xmm1, %%xmm4 \n\t"
+        "pand %%xmm0, %%xmm4 \n\t"
+        "movdqa %%xmm3, %%xmm1 \n\t"
+        "pand %%xmm2, %%xmm1 \n\t"
+        "pxor %%xmm2, %%xmm3 \n\t"
+        "por %%xmm1, %%xmm4 \n\t"
+        "movdqa %%xmm6, %%xmm8 \n\t"
+        "pand %%xmm13, %%xmm8 \n\t"
+        "movdqa %%xmm7, %%xmm9 \n\t"
+        "pand %%xmm13, %%xmm9 \n\t"
+        "movdqa %%xmm5, %%xmm12 \n\t"
+        "pand %%xmm13, %%xmm12 \n\t"
+        "movdqa %%xmm13, %%xmm0 \n\t"
+        "pandn %%xmm3, %%xmm0 \n\t"
+        "por %%xmm0, %%xmm8 \n\t"
+        "movdqa %%xmm13, %%xmm0 \n\t"
+        "pandn %%xmm4, %%xmm0 \n\t"
+        "por %%xmm0, %%xmm9 \n\t"
+        "movdqa %%xmm13, %%xmm0 \n\t"
+        "pandn %%xmm2, %%xmm0 \n\t"
+        "por %%xmm0, %%xmm12 \n\t"
+        "shufps $0x39, %%xmm8, %%xmm8 \n\t"
+        "shufps $0x39, %%xmm9, %%xmm9 \n\t"
+        "movdqa %%xmm6, %%xmm10 \n\t"
+        "shufps $0x4e, %%xmm3, %%xmm10 \n\t"
+        "movdqa %%xmm7, %%xmm11 \n\t"
+        "shufps $0x4e, %%xmm4, %%xmm11 \n\t"
+        "shufps $0x39, %%xmm12, %%xmm12 \n\t"
+        "pxor %%xmm6, %%xmm8 \n\t"
+        "pxor %%xmm7, %%xmm9 \n\t"
+        "pxor %%xmm8, %%xmm10 \n\t"
+        "pxor %%xmm9, %%xmm11 \n\t"
+        "por %%xmm8, %%xmm6 \n\t"
+        "por %%xmm9, %%xmm7 \n\t"
+        "pand %%xmm10, %%xmm8 \n\t"
+        "pand %%xmm11, %%xmm9 \n\t"
+        "pandn %%xmm6, %%xmm8 \n\t"
+        "pandn %%xmm7, %%xmm9 \n\t"
+#include "ll_sse2_b3s23.asm"
+        "movups %%xmm10, (%1) \n\t"
+        "movups 32(%0), %%xmm5 \n\t"
+        "movdqa %%xmm5, %%xmm0 \n\t"
+        "movdqa %%xmm5, %%xmm1 \n\t"
+        "psrld $1, %%xmm0 \n\t"
+        "pslld $1, %%xmm1 \n\t"
+        "movdqa %%xmm1, %%xmm6 \n\t"
+        "pxor %%xmm0, %%xmm6 \n\t"
+        "movdqa %%xmm1, %%xmm7 \n\t"
+        "pand %%xmm0, %%xmm7 \n\t"
+        "movdqa %%xmm6, %%xmm1 \n\t"
+        "pand %%xmm5, %%xmm1 \n\t"
+        "pxor %%xmm5, %%xmm6 \n\t"
+        "por %%xmm1, %%xmm7 \n\t"
+        "movdqa %%xmm3, %%xmm8 \n\t"
+        "pand %%xmm13, %%xmm8 \n\t"
+        "movdqa %%xmm4, %%xmm9 \n\t"
+        "pand %%xmm13, %%xmm9 \n\t"
+        "movdqa %%xmm2, %%xmm12 \n\t"
+        "pand %%xmm13, %%xmm12 \n\t"
+        "movdqa %%xmm13, %%xmm0 \n\t"
+        "pandn %%xmm6, %%xmm0 \n\t"
+        "por %%xmm0, %%xmm8 \n\t"
+        "movdqa %%xmm13, %%xmm0 \n\t"
+        "pandn %%xmm7, %%xmm0 \n\t"
+        "por %%xmm0, %%xmm9 \n\t"
+        "movdqa %%xmm13, %%xmm0 \n\t"
+        "pandn %%xmm5, %%xmm0 \n\t"
+        "por %%xmm0, %%xmm12 \n\t"
+        "shufps $0x39, %%xmm8, %%xmm8 \n\t"
+        "shufps $0x39, %%xmm9, %%xmm9 \n\t"
+        "movdqa %%xmm3, %%xmm10 \n\t"
+        "shufps $0x4e, %%xmm6, %%xmm10 \n\t"
+        "movdqa %%xmm4, %%xmm11 \n\t"
+        "shufps $0x4e, %%xmm7, %%xmm11 \n\t"
+        "shufps $0x39, %%xmm12, %%xmm12 \n\t"
+        "pxor %%xmm3, %%xmm8 \n\t"
+        "pxor %%xmm4, %%xmm9 \n\t"
+        "pxor %%xmm8, %%xmm10 \n\t"
+        "pxor %%xmm9, %%xmm11 \n\t"
+        "por %%xmm8, %%xmm3 \n\t"
+        "por %%xmm9, %%xmm4 \n\t"
+        "pand %%xmm10, %%xmm8 \n\t"
+        "pand %%xmm11, %%xmm9 \n\t"
+        "pandn %%xmm3, %%xmm8 \n\t"
+        "pandn %%xmm4, %%xmm9 \n\t"
+#include "ll_sse2_b3s23.asm"
+        "movups %%xmm10, 16(%1) \n\t"
+        "movups 48(%0), %%xmm2 \n\t"
+        "movdqa %%xmm2, %%xmm0 \n\t"
+        "movdqa %%xmm2, %%xmm1 \n\t"
+        "psrld $1, %%xmm0 \n\t"
+        "pslld $1, %%xmm1 \n\t"
+        "movdqa %%xmm1, %%xmm3 \n\t"
+        "pxor %%xmm0, %%xmm3 \n\t"
+        "movdqa %%xmm1, %%xmm4 \n\t"
+        "pand %%xmm0, %%xmm4 \n\t"
+        "movdqa %%xmm3, %%xmm1 \n\t"
+        "pand %%xmm2, %%xmm1 \n\t"
+        "pxor %%xmm2, %%xmm3 \n\t"
+        "por %%xmm1, %%xmm4 \n\t"
+        "movdqa %%xmm6, %%xmm8 \n\t"
+        "pand %%xmm13, %%xmm8 \n\t"
+        "movdqa %%xmm7, %%xmm9 \n\t"
+        "pand %%xmm13, %%xmm9 \n\t"
+        "movdqa %%xmm5, %%xmm12 \n\t"
+        "pand %%xmm13, %%xmm12 \n\t"
+        "movdqa %%xmm13, %%xmm0 \n\t"
+        "pandn %%xmm3, %%xmm0 \n\t"
+        "por %%xmm0, %%xmm8 \n\t"
+        "movdqa %%xmm13, %%xmm0 \n\t"
+        "pandn %%xmm4, %%xmm0 \n\t"
+        "por %%xmm0, %%xmm9 \n\t"
+        "movdqa %%xmm13, %%xmm0 \n\t"
+        "pandn %%xmm2, %%xmm0 \n\t"
+        "por %%xmm0, %%xmm12 \n\t"
+        "shufps $0x39, %%xmm8, %%xmm8 \n\t"
+        "shufps $0x39, %%xmm9, %%xmm9 \n\t"
+        "movdqa %%xmm6, %%xmm10 \n\t"
+        "shufps $0x4e, %%xmm3, %%xmm10 \n\t"
+        "movdqa %%xmm7, %%xmm11 \n\t"
+        "shufps $0x4e, %%xmm4, %%xmm11 \n\t"
+        "shufps $0x39, %%xmm12, %%xmm12 \n\t"
+        "pxor %%xmm6, %%xmm8 \n\t"
+        "pxor %%xmm7, %%xmm9 \n\t"
+        "pxor %%xmm8, %%xmm10 \n\t"
+        "pxor %%xmm9, %%xmm11 \n\t"
+        "por %%xmm8, %%xmm6 \n\t"
+        "por %%xmm9, %%xmm7 \n\t"
+        "pand %%xmm10, %%xmm8 \n\t"
+        "pand %%xmm11, %%xmm9 \n\t"
+        "pandn %%xmm6, %%xmm8 \n\t"
+        "pandn %%xmm7, %%xmm9 \n\t"
+#include "ll_sse2_b3s23.asm"
+        "movups %%xmm10, 32(%1) \n\t"
+        "movdqa %%xmm3, %%xmm8 \n\t"
+        "pand %%xmm13, %%xmm8 \n\t"
+        "movdqa %%xmm4, %%xmm9 \n\t"
+        "pand %%xmm13, %%xmm9 \n\t"
+        "movdqa %%xmm2, %%xmm12 \n\t"
+        "pand %%xmm13, %%xmm12 \n\t"
+        "movdqa %%xmm13, %%xmm0 \n\t"
+        "pandn %%xmm6, %%xmm0 \n\t"
+        "por %%xmm0, %%xmm8 \n\t"
+        "movdqa %%xmm13, %%xmm0 \n\t"
+        "pandn %%xmm7, %%xmm0 \n\t"
+        "por %%xmm0, %%xmm9 \n\t"
+        "movdqa %%xmm13, %%xmm0 \n\t"
+        "pandn %%xmm5, %%xmm0 \n\t"
+        "por %%xmm0, %%xmm12 \n\t"
+        "shufps $0x39, %%xmm8, %%xmm8 \n\t"
+        "shufps $0x39, %%xmm9, %%xmm9 \n\t"
+        "movdqa %%xmm3, %%xmm10 \n\t"
+        "shufps $0x4e, %%xmm6, %%xmm10 \n\t"
+        "movdqa %%xmm4, %%xmm11 \n\t"
+        "shufps $0x4e, %%xmm7, %%xmm11 \n\t"
+        "shufps $0x39, %%xmm12, %%xmm12 \n\t"
+        "pxor %%xmm3, %%xmm8 \n\t"
+        "pxor %%xmm4, %%xmm9 \n\t"
+        "pxor %%xmm8, %%xmm10 \n\t"
+        "pxor %%xmm9, %%xmm11 \n\t"
+        "por %%xmm8, %%xmm3 \n\t"
+        "por %%xmm9, %%xmm4 \n\t"
+        "pand %%xmm10, %%xmm8 \n\t"
+        "pand %%xmm11, %%xmm9 \n\t"
+        "pandn %%xmm3, %%xmm8 \n\t"
+        "pandn %%xmm4, %%xmm9 \n\t"
+#include "ll_sse2_b3s23.asm"
+        "movups %%xmm10, 48(%1) \n\t"
+                : /* no output operands */ 
+                : "r" (d), "r" (e), "r" (apg::__sixteen12)
+                : "ebx", "xmm0", "xmm1", "xmm2", "xmm3", "xmm4", 
+                    "xmm5", "xmm6", "xmm7", "xmm8", "xmm9", "xmm10", 
+                    "xmm11", "xmm12", "xmm13", "xmm14", "xmm15", "memory");
+
+        if (h) {
+            for (int i = 1; i < 15; i++) {
+                h[i] |= e[i-1];
+            }
+        }
+        if (j) {
+            for (int i = 1; i < 15; i++) {
+                j[i] &= e[i-1];
+            }
+        }
+        if (onegen) {
+            for (int i = 2; i < 14; i++) {
+                d[i] = e[i-1];
+            }
+            return false;
+        }
+        asm (
+        "mov $0xffffffff, %%ebx \n\t"
+        "movd %%ebx, %%xmm13 \n\t"
+        "mov $0x003ffc00, %%ebx \n\t"
+        "movd %%ebx, %%xmm14 \n\t"
+        "pshufd $1, %%xmm13, %%xmm13 \n\t"
+        "pshufd $0, %%xmm14, %%xmm14 \n\t"
+        "movups (%1), %%xmm5 \n\t"
+        "movdqa %%xmm5, %%xmm0 \n\t"
+        "movdqa %%xmm5, %%xmm1 \n\t"
+        "psrld $1, %%xmm0 \n\t"
+        "pslld $1, %%xmm1 \n\t"
+        "movdqa %%xmm1, %%xmm6 \n\t"
+        "pxor %%xmm0, %%xmm6 \n\t"
+        "movdqa %%xmm1, %%xmm7 \n\t"
+        "pand %%xmm0, %%xmm7 \n\t"
+        "movdqa %%xmm6, %%xmm1 \n\t"
+        "pand %%xmm5, %%xmm1 \n\t"
+        "pxor %%xmm5, %%xmm6 \n\t"
+        "por %%xmm1, %%xmm7 \n\t"
+        "movups 16(%1), %%xmm2 \n\t"
+        "movdqa %%xmm2, %%xmm0 \n\t"
+        "movdqa %%xmm2, %%xmm1 \n\t"
+        "psrld $1, %%xmm0 \n\t"
+        "pslld $1, %%xmm1 \n\t"
+        "movdqa %%xmm1, %%xmm3 \n\t"
+        "pxor %%xmm0, %%xmm3 \n\t"
+        "movdqa %%xmm1, %%xmm4 \n\t"
+        "pand %%xmm0, %%xmm4 \n\t"
+        "movdqa %%xmm3, %%xmm1 \n\t"
+        "pand %%xmm2, %%xmm1 \n\t"
+        "pxor %%xmm2, %%xmm3 \n\t"
+        "por %%xmm1, %%xmm4 \n\t"
+        "movdqa %%xmm6, %%xmm8 \n\t"
+        "pand %%xmm13, %%xmm8 \n\t"
+        "movdqa %%xmm7, %%xmm9 \n\t"
+        "pand %%xmm13, %%xmm9 \n\t"
+        "movdqa %%xmm5, %%xmm12 \n\t"
+        "pand %%xmm13, %%xmm12 \n\t"
+        "movdqa %%xmm13, %%xmm0 \n\t"
+        "pandn %%xmm3, %%xmm0 \n\t"
+        "por %%xmm0, %%xmm8 \n\t"
+        "movdqa %%xmm13, %%xmm0 \n\t"
+        "pandn %%xmm4, %%xmm0 \n\t"
+        "por %%xmm0, %%xmm9 \n\t"
+        "movdqa %%xmm13, %%xmm0 \n\t"
+        "pandn %%xmm2, %%xmm0 \n\t"
+        "por %%xmm0, %%xmm12 \n\t"
+        "shufps $0x39, %%xmm8, %%xmm8 \n\t"
+        "shufps $0x39, %%xmm9, %%xmm9 \n\t"
+        "movdqa %%xmm6, %%xmm10 \n\t"
+        "shufps $0x4e, %%xmm3, %%xmm10 \n\t"
+        "movdqa %%xmm7, %%xmm11 \n\t"
+        "shufps $0x4e, %%xmm4, %%xmm11 \n\t"
+        "shufps $0x39, %%xmm12, %%xmm12 \n\t"
+        "pxor %%xmm6, %%xmm8 \n\t"
+        "pxor %%xmm7, %%xmm9 \n\t"
+        "pxor %%xmm8, %%xmm10 \n\t"
+        "pxor %%xmm9, %%xmm11 \n\t"
+        "por %%xmm8, %%xmm6 \n\t"
+        "por %%xmm9, %%xmm7 \n\t"
+        "pand %%xmm10, %%xmm8 \n\t"
+        "pand %%xmm11, %%xmm9 \n\t"
+        "pandn %%xmm6, %%xmm8 \n\t"
+        "pandn %%xmm7, %%xmm9 \n\t"
+#include "ll_sse2_b3s23.asm"
+        "pand %%xmm14, %%xmm10 \n\t"
+        "movups 8(%0), %%xmm8 \n\t"
+        "movdqa %%xmm14, %%xmm11 \n\t"
+        "pandn %%xmm8, %%xmm11 \n\t"
+        "por %%xmm10, %%xmm11 \n\t"
+        "movups %%xmm11, 8(%0) \n\t"
+        "movdqa %%xmm8, %%xmm15 \n\t"
+        "pxor %%xmm11, %%xmm15 \n\t"
+        "movups %%xmm15, (%1) \n\t"
+        "movups 32(%1), %%xmm5 \n\t"
+        "movdqa %%xmm5, %%xmm0 \n\t"
+        "movdqa %%xmm5, %%xmm1 \n\t"
+        "psrld $1, %%xmm0 \n\t"
+        "pslld $1, %%xmm1 \n\t"
+        "movdqa %%xmm1, %%xmm6 \n\t"
+        "pxor %%xmm0, %%xmm6 \n\t"
+        "movdqa %%xmm1, %%xmm7 \n\t"
+        "pand %%xmm0, %%xmm7 \n\t"
+        "movdqa %%xmm6, %%xmm1 \n\t"
+        "pand %%xmm5, %%xmm1 \n\t"
+        "pxor %%xmm5, %%xmm6 \n\t"
+        "por %%xmm1, %%xmm7 \n\t"
+        "movdqa %%xmm3, %%xmm8 \n\t"
+        "pand %%xmm13, %%xmm8 \n\t"
+        "movdqa %%xmm4, %%xmm9 \n\t"
+        "pand %%xmm13, %%xmm9 \n\t"
+        "movdqa %%xmm2, %%xmm12 \n\t"
+        "pand %%xmm13, %%xmm12 \n\t"
+        "movdqa %%xmm13, %%xmm0 \n\t"
+        "pandn %%xmm6, %%xmm0 \n\t"
+        "por %%xmm0, %%xmm8 \n\t"
+        "movdqa %%xmm13, %%xmm0 \n\t"
+        "pandn %%xmm7, %%xmm0 \n\t"
+        "por %%xmm0, %%xmm9 \n\t"
+        "movdqa %%xmm13, %%xmm0 \n\t"
+        "pandn %%xmm5, %%xmm0 \n\t"
+        "por %%xmm0, %%xmm12 \n\t"
+        "shufps $0x39, %%xmm8, %%xmm8 \n\t"
+        "shufps $0x39, %%xmm9, %%xmm9 \n\t"
+        "movdqa %%xmm3, %%xmm10 \n\t"
+        "shufps $0x4e, %%xmm6, %%xmm10 \n\t"
+        "movdqa %%xmm4, %%xmm11 \n\t"
+        "shufps $0x4e, %%xmm7, %%xmm11 \n\t"
+        "shufps $0x39, %%xmm12, %%xmm12 \n\t"
+        "pxor %%xmm3, %%xmm8 \n\t"
+        "pxor %%xmm4, %%xmm9 \n\t"
+        "pxor %%xmm8, %%xmm10 \n\t"
+        "pxor %%xmm9, %%xmm11 \n\t"
+        "por %%xmm8, %%xmm3 \n\t"
+        "por %%xmm9, %%xmm4 \n\t"
+        "pand %%xmm10, %%xmm8 \n\t"
+        "pand %%xmm11, %%xmm9 \n\t"
+        "pandn %%xmm3, %%xmm8 \n\t"
+        "pandn %%xmm4, %%xmm9 \n\t"
+#include "ll_sse2_b3s23.asm"
+        "pand %%xmm14, %%xmm10 \n\t"
+        "movups 24(%0), %%xmm8 \n\t"
+        "movdqa %%xmm14, %%xmm11 \n\t"
+        "pandn %%xmm8, %%xmm11 \n\t"
+        "por %%xmm10, %%xmm11 \n\t"
+        "movups %%xmm11, 24(%0) \n\t"
+        "pxor %%xmm11, %%xmm8 \n\t"
+        "por %%xmm8, %%xmm15 \n\t"
+        "movups 48(%1), %%xmm2 \n\t"
+        "movdqa %%xmm2, %%xmm0 \n\t"
+        "movdqa %%xmm2, %%xmm1 \n\t"
+        "psrld $1, %%xmm0 \n\t"
+        "pslld $1, %%xmm1 \n\t"
+        "movdqa %%xmm1, %%xmm3 \n\t"
+        "pxor %%xmm0, %%xmm3 \n\t"
+        "movdqa %%xmm1, %%xmm4 \n\t"
+        "pand %%xmm0, %%xmm4 \n\t"
+        "movdqa %%xmm3, %%xmm1 \n\t"
+        "pand %%xmm2, %%xmm1 \n\t"
+        "pxor %%xmm2, %%xmm3 \n\t"
+        "por %%xmm1, %%xmm4 \n\t"
+        "movdqa %%xmm6, %%xmm8 \n\t"
+        "pand %%xmm13, %%xmm8 \n\t"
+        "movdqa %%xmm7, %%xmm9 \n\t"
+        "pand %%xmm13, %%xmm9 \n\t"
+        "movdqa %%xmm5, %%xmm12 \n\t"
+        "pand %%xmm13, %%xmm12 \n\t"
+        "movdqa %%xmm13, %%xmm0 \n\t"
+        "pandn %%xmm3, %%xmm0 \n\t"
+        "por %%xmm0, %%xmm8 \n\t"
+        "movdqa %%xmm13, %%xmm0 \n\t"
+        "pandn %%xmm4, %%xmm0 \n\t"
+        "por %%xmm0, %%xmm9 \n\t"
+        "movdqa %%xmm13, %%xmm0 \n\t"
+        "pandn %%xmm2, %%xmm0 \n\t"
+        "por %%xmm0, %%xmm12 \n\t"
+        "shufps $0x39, %%xmm8, %%xmm8 \n\t"
+        "shufps $0x39, %%xmm9, %%xmm9 \n\t"
+        "movdqa %%xmm6, %%xmm10 \n\t"
+        "shufps $0x4e, %%xmm3, %%xmm10 \n\t"
+        "movdqa %%xmm7, %%xmm11 \n\t"
+        "shufps $0x4e, %%xmm4, %%xmm11 \n\t"
+        "shufps $0x39, %%xmm12, %%xmm12 \n\t"
+        "pxor %%xmm6, %%xmm8 \n\t"
+        "pxor %%xmm7, %%xmm9 \n\t"
+        "pxor %%xmm8, %%xmm10 \n\t"
+        "pxor %%xmm9, %%xmm11 \n\t"
+        "por %%xmm8, %%xmm6 \n\t"
+        "por %%xmm9, %%xmm7 \n\t"
+        "pand %%xmm10, %%xmm8 \n\t"
+        "pand %%xmm11, %%xmm9 \n\t"
+        "pandn %%xmm6, %%xmm8 \n\t"
+        "pandn %%xmm7, %%xmm9 \n\t"
+#include "ll_sse2_b3s23.asm"
+        "pand %%xmm14, %%xmm10 \n\t"
+        "movups 40(%0), %%xmm8 \n\t"
+        "movdqa %%xmm14, %%xmm11 \n\t"
+        "pandn %%xmm8, %%xmm11 \n\t"
+        "por %%xmm10, %%xmm11 \n\t"
+        "movups %%xmm11, 40(%0) \n\t"
+        "pxor %%xmm11, %%xmm8 \n\t"
+        "por %%xmm8, %%xmm15 \n\t"
+        "movups %%xmm8, 32(%1) \n\t"
+        "movups %%xmm15, 16(%1) \n\t"
+                : /* no output operands */ 
+                : "r" (d), "r" (e), "r" (apg::__sixteen12)
+                : "ebx", "xmm0", "xmm1", "xmm2", "xmm3", "xmm4", 
+                    "xmm5", "xmm6", "xmm7", "xmm8", "xmm9", "xmm10", 
+                    "xmm11", "xmm12", "xmm13", "xmm14", "xmm15", "memory");
+
+        if (h) {
+            for (int i = 2; i < 14; i++) {
+                h[i] |= d[i];
+            }
+        }
+        if (j) {
+            for (int i = 2; i < 14; i++) {
+                j[i] &= d[i];
+            }
+        }
+        uint32_t bigdiff = e[4] | e[5] | e[6] | e[7];
+        if (diffs != 0) {
+        diffs[0] = bigdiff;
+        diffs[1] = e[0] | e[1];
+        diffs[2] = e[10] | e[11];
+        }
+        return (bigdiff == 0);
+    }
+
+    bool iterate_sse2_12_8(uint32_t * __restrict__ d, uint32_t * __restrict__ e, uint32_t * __restrict__ h, uint32_t * __restrict__ j, uint32_t * __restrict__ diffs, bool onegen) {
+        if (h) {
+            for (int i = 0; i < 12; i++) {
+                h[i] |= d[i];
+            }
+        }
+        if (j) {
+            for (int i = 0; i < 12; i++) {
+                j[i] &= d[i];
+            }
+        }
+        asm (
+        "mov $0xffffffff, %%ebx \n\t"
+        "movd %%ebx, %%xmm13 \n\t"
+        "mov $0x000ff000, %%ebx \n\t"
+        "movd %%ebx, %%xmm14 \n\t"
+        "pshufd $1, %%xmm13, %%xmm13 \n\t"
+        "pshufd $0, %%xmm14, %%xmm14 \n\t"
+        "movups (%0), %%xmm5 \n\t"
+        "movdqa %%xmm5, %%xmm0 \n\t"
+        "movdqa %%xmm5, %%xmm1 \n\t"
+        "psrld $1, %%xmm0 \n\t"
+        "pslld $1, %%xmm1 \n\t"
+        "movdqa %%xmm1, %%xmm6 \n\t"
+        "pxor %%xmm0, %%xmm6 \n\t"
+        "movdqa %%xmm1, %%xmm7 \n\t"
+        "pand %%xmm0, %%xmm7 \n\t"
+        "movdqa %%xmm6, %%xmm1 \n\t"
+        "pand %%xmm5, %%xmm1 \n\t"
+        "pxor %%xmm5, %%xmm6 \n\t"
+        "por %%xmm1, %%xmm7 \n\t"
+        "movups 16(%0), %%xmm2 \n\t"
+        "movdqa %%xmm2, %%xmm0 \n\t"
+        "movdqa %%xmm2, %%xmm1 \n\t"
+        "psrld $1, %%xmm0 \n\t"
+        "pslld $1, %%xmm1 \n\t"
+        "movdqa %%xmm1, %%xmm3 \n\t"
+        "pxor %%xmm0, %%xmm3 \n\t"
+        "movdqa %%xmm1, %%xmm4 \n\t"
+        "pand %%xmm0, %%xmm4 \n\t"
+        "movdqa %%xmm3, %%xmm1 \n\t"
+        "pand %%xmm2, %%xmm1 \n\t"
+        "pxor %%xmm2, %%xmm3 \n\t"
+        "por %%xmm1, %%xmm4 \n\t"
+        "movdqa %%xmm6, %%xmm8 \n\t"
+        "pand %%xmm13, %%xmm8 \n\t"
+        "movdqa %%xmm7, %%xmm9 \n\t"
+        "pand %%xmm13, %%xmm9 \n\t"
+        "movdqa %%xmm5, %%xmm12 \n\t"
+        "pand %%xmm13, %%xmm12 \n\t"
+        "movdqa %%xmm13, %%xmm0 \n\t"
+        "pandn %%xmm3, %%xmm0 \n\t"
+        "por %%xmm0, %%xmm8 \n\t"
+        "movdqa %%xmm13, %%xmm0 \n\t"
+        "pandn %%xmm4, %%xmm0 \n\t"
+        "por %%xmm0, %%xmm9 \n\t"
+        "movdqa %%xmm13, %%xmm0 \n\t"
+        "pandn %%xmm2, %%xmm0 \n\t"
+        "por %%xmm0, %%xmm12 \n\t"
+        "shufps $0x39, %%xmm8, %%xmm8 \n\t"
+        "shufps $0x39, %%xmm9, %%xmm9 \n\t"
+        "movdqa %%xmm6, %%xmm10 \n\t"
+        "shufps $0x4e, %%xmm3, %%xmm10 \n\t"
+        "movdqa %%xmm7, %%xmm11 \n\t"
+        "shufps $0x4e, %%xmm4, %%xmm11 \n\t"
+        "shufps $0x39, %%xmm12, %%xmm12 \n\t"
+        "pxor %%xmm6, %%xmm8 \n\t"
+        "pxor %%xmm7, %%xmm9 \n\t"
+        "pxor %%xmm8, %%xmm10 \n\t"
+        "pxor %%xmm9, %%xmm11 \n\t"
+        "por %%xmm8, %%xmm6 \n\t"
+        "por %%xmm9, %%xmm7 \n\t"
+        "pand %%xmm10, %%xmm8 \n\t"
+        "pand %%xmm11, %%xmm9 \n\t"
+        "pandn %%xmm6, %%xmm8 \n\t"
+        "pandn %%xmm7, %%xmm9 \n\t"
+#include "ll_sse2_b3s23.asm"
+        "movups %%xmm10, (%1) \n\t"
+        "movups 32(%0), %%xmm5 \n\t"
+        "movdqa %%xmm5, %%xmm0 \n\t"
+        "movdqa %%xmm5, %%xmm1 \n\t"
+        "psrld $1, %%xmm0 \n\t"
+        "pslld $1, %%xmm1 \n\t"
+        "movdqa %%xmm1, %%xmm6 \n\t"
+        "pxor %%xmm0, %%xmm6 \n\t"
+        "movdqa %%xmm1, %%xmm7 \n\t"
+        "pand %%xmm0, %%xmm7 \n\t"
+        "movdqa %%xmm6, %%xmm1 \n\t"
+        "pand %%xmm5, %%xmm1 \n\t"
+        "pxor %%xmm5, %%xmm6 \n\t"
+        "por %%xmm1, %%xmm7 \n\t"
+        "movdqa %%xmm3, %%xmm8 \n\t"
+        "pand %%xmm13, %%xmm8 \n\t"
+        "movdqa %%xmm4, %%xmm9 \n\t"
+        "pand %%xmm13, %%xmm9 \n\t"
+        "movdqa %%xmm2, %%xmm12 \n\t"
+        "pand %%xmm13, %%xmm12 \n\t"
+        "movdqa %%xmm13, %%xmm0 \n\t"
+        "pandn %%xmm6, %%xmm0 \n\t"
+        "por %%xmm0, %%xmm8 \n\t"
+        "movdqa %%xmm13, %%xmm0 \n\t"
+        "pandn %%xmm7, %%xmm0 \n\t"
+        "por %%xmm0, %%xmm9 \n\t"
+        "movdqa %%xmm13, %%xmm0 \n\t"
+        "pandn %%xmm5, %%xmm0 \n\t"
+        "por %%xmm0, %%xmm12 \n\t"
+        "shufps $0x39, %%xmm8, %%xmm8 \n\t"
+        "shufps $0x39, %%xmm9, %%xmm9 \n\t"
+        "movdqa %%xmm3, %%xmm10 \n\t"
+        "shufps $0x4e, %%xmm6, %%xmm10 \n\t"
+        "movdqa %%xmm4, %%xmm11 \n\t"
+        "shufps $0x4e, %%xmm7, %%xmm11 \n\t"
+        "shufps $0x39, %%xmm12, %%xmm12 \n\t"
+        "pxor %%xmm3, %%xmm8 \n\t"
+        "pxor %%xmm4, %%xmm9 \n\t"
+        "pxor %%xmm8, %%xmm10 \n\t"
+        "pxor %%xmm9, %%xmm11 \n\t"
+        "por %%xmm8, %%xmm3 \n\t"
+        "por %%xmm9, %%xmm4 \n\t"
+        "pand %%xmm10, %%xmm8 \n\t"
+        "pand %%xmm11, %%xmm9 \n\t"
+        "pandn %%xmm3, %%xmm8 \n\t"
+        "pandn %%xmm4, %%xmm9 \n\t"
+#include "ll_sse2_b3s23.asm"
+        "movups %%xmm10, 16(%1) \n\t"
+        "movdqa %%xmm6, %%xmm8 \n\t"
+        "pand %%xmm13, %%xmm8 \n\t"
+        "movdqa %%xmm7, %%xmm9 \n\t"
+        "pand %%xmm13, %%xmm9 \n\t"
+        "movdqa %%xmm5, %%xmm12 \n\t"
+        "pand %%xmm13, %%xmm12 \n\t"
+        "movdqa %%xmm13, %%xmm0 \n\t"
+        "pandn %%xmm3, %%xmm0 \n\t"
+        "por %%xmm0, %%xmm8 \n\t"
+        "movdqa %%xmm13, %%xmm0 \n\t"
+        "pandn %%xmm4, %%xmm0 \n\t"
+        "por %%xmm0, %%xmm9 \n\t"
+        "movdqa %%xmm13, %%xmm0 \n\t"
+        "pandn %%xmm2, %%xmm0 \n\t"
+        "por %%xmm0, %%xmm12 \n\t"
+        "shufps $0x39, %%xmm8, %%xmm8 \n\t"
+        "shufps $0x39, %%xmm9, %%xmm9 \n\t"
+        "movdqa %%xmm6, %%xmm10 \n\t"
+        "shufps $0x4e, %%xmm3, %%xmm10 \n\t"
+        "movdqa %%xmm7, %%xmm11 \n\t"
+        "shufps $0x4e, %%xmm4, %%xmm11 \n\t"
+        "shufps $0x39, %%xmm12, %%xmm12 \n\t"
+        "pxor %%xmm6, %%xmm8 \n\t"
+        "pxor %%xmm7, %%xmm9 \n\t"
+        "pxor %%xmm8, %%xmm10 \n\t"
+        "pxor %%xmm9, %%xmm11 \n\t"
+        "por %%xmm8, %%xmm6 \n\t"
+        "por %%xmm9, %%xmm7 \n\t"
+        "pand %%xmm10, %%xmm8 \n\t"
+        "pand %%xmm11, %%xmm9 \n\t"
+        "pandn %%xmm6, %%xmm8 \n\t"
+        "pandn %%xmm7, %%xmm9 \n\t"
+#include "ll_sse2_b3s23.asm"
+        "movups %%xmm10, 32(%1) \n\t"
+                : /* no output operands */ 
+                : "r" (d), "r" (e), "r" (apg::__sixteen8)
+                : "ebx", "xmm0", "xmm1", "xmm2", "xmm3", "xmm4", 
+                    "xmm5", "xmm6", "xmm7", "xmm8", "xmm9", "xmm10", 
+                    "xmm11", "xmm12", "xmm13", "xmm14", "xmm15", "memory");
+
+        if (h) {
+            for (int i = 1; i < 11; i++) {
+                h[i] |= e[i-1];
+            }
+        }
+        if (j) {
+            for (int i = 1; i < 11; i++) {
+                j[i] &= e[i-1];
+            }
+        }
+        if (onegen) {
+            for (int i = 2; i < 10; i++) {
+                d[i] = e[i-1];
+            }
+            return false;
+        }
+        asm (
+        "mov $0xffffffff, %%ebx \n\t"
+        "movd %%ebx, %%xmm13 \n\t"
+        "mov $0x000ff000, %%ebx \n\t"
+        "movd %%ebx, %%xmm14 \n\t"
+        "pshufd $1, %%xmm13, %%xmm13 \n\t"
+        "pshufd $0, %%xmm14, %%xmm14 \n\t"
+        "movups (%1), %%xmm5 \n\t"
+        "movdqa %%xmm5, %%xmm0 \n\t"
+        "movdqa %%xmm5, %%xmm1 \n\t"
+        "psrld $1, %%xmm0 \n\t"
+        "pslld $1, %%xmm1 \n\t"
+        "movdqa %%xmm1, %%xmm6 \n\t"
+        "pxor %%xmm0, %%xmm6 \n\t"
+        "movdqa %%xmm1, %%xmm7 \n\t"
+        "pand %%xmm0, %%xmm7 \n\t"
+        "movdqa %%xmm6, %%xmm1 \n\t"
+        "pand %%xmm5, %%xmm1 \n\t"
+        "pxor %%xmm5, %%xmm6 \n\t"
+        "por %%xmm1, %%xmm7 \n\t"
+        "movups 16(%1), %%xmm2 \n\t"
+        "movdqa %%xmm2, %%xmm0 \n\t"
+        "movdqa %%xmm2, %%xmm1 \n\t"
+        "psrld $1, %%xmm0 \n\t"
+        "pslld $1, %%xmm1 \n\t"
+        "movdqa %%xmm1, %%xmm3 \n\t"
+        "pxor %%xmm0, %%xmm3 \n\t"
+        "movdqa %%xmm1, %%xmm4 \n\t"
+        "pand %%xmm0, %%xmm4 \n\t"
+        "movdqa %%xmm3, %%xmm1 \n\t"
+        "pand %%xmm2, %%xmm1 \n\t"
+        "pxor %%xmm2, %%xmm3 \n\t"
+        "por %%xmm1, %%xmm4 \n\t"
+        "movdqa %%xmm6, %%xmm8 \n\t"
+        "pand %%xmm13, %%xmm8 \n\t"
+        "movdqa %%xmm7, %%xmm9 \n\t"
+        "pand %%xmm13, %%xmm9 \n\t"
+        "movdqa %%xmm5, %%xmm12 \n\t"
+        "pand %%xmm13, %%xmm12 \n\t"
+        "movdqa %%xmm13, %%xmm0 \n\t"
+        "pandn %%xmm3, %%xmm0 \n\t"
+        "por %%xmm0, %%xmm8 \n\t"
+        "movdqa %%xmm13, %%xmm0 \n\t"
+        "pandn %%xmm4, %%xmm0 \n\t"
+        "por %%xmm0, %%xmm9 \n\t"
+        "movdqa %%xmm13, %%xmm0 \n\t"
+        "pandn %%xmm2, %%xmm0 \n\t"
+        "por %%xmm0, %%xmm12 \n\t"
+        "shufps $0x39, %%xmm8, %%xmm8 \n\t"
+        "shufps $0x39, %%xmm9, %%xmm9 \n\t"
+        "movdqa %%xmm6, %%xmm10 \n\t"
+        "shufps $0x4e, %%xmm3, %%xmm10 \n\t"
+        "movdqa %%xmm7, %%xmm11 \n\t"
+        "shufps $0x4e, %%xmm4, %%xmm11 \n\t"
+        "shufps $0x39, %%xmm12, %%xmm12 \n\t"
+        "pxor %%xmm6, %%xmm8 \n\t"
+        "pxor %%xmm7, %%xmm9 \n\t"
+        "pxor %%xmm8, %%xmm10 \n\t"
+        "pxor %%xmm9, %%xmm11 \n\t"
+        "por %%xmm8, %%xmm6 \n\t"
+        "por %%xmm9, %%xmm7 \n\t"
+        "pand %%xmm10, %%xmm8 \n\t"
+        "pand %%xmm11, %%xmm9 \n\t"
+        "pandn %%xmm6, %%xmm8 \n\t"
+        "pandn %%xmm7, %%xmm9 \n\t"
+#include "ll_sse2_b3s23.asm"
+        "pand %%xmm14, %%xmm10 \n\t"
+        "movups 8(%0), %%xmm8 \n\t"
+        "movdqa %%xmm14, %%xmm11 \n\t"
+        "pandn %%xmm8, %%xmm11 \n\t"
+        "por %%xmm10, %%xmm11 \n\t"
+        "movups %%xmm11, 8(%0) \n\t"
+        "movdqa %%xmm8, %%xmm15 \n\t"
+        "pxor %%xmm11, %%xmm15 \n\t"
+        "movups %%xmm15, (%1) \n\t"
+        "movups 32(%1), %%xmm5 \n\t"
+        "movdqa %%xmm5, %%xmm0 \n\t"
+        "movdqa %%xmm5, %%xmm1 \n\t"
+        "psrld $1, %%xmm0 \n\t"
+        "pslld $1, %%xmm1 \n\t"
+        "movdqa %%xmm1, %%xmm6 \n\t"
+        "pxor %%xmm0, %%xmm6 \n\t"
+        "movdqa %%xmm1, %%xmm7 \n\t"
+        "pand %%xmm0, %%xmm7 \n\t"
+        "movdqa %%xmm6, %%xmm1 \n\t"
+        "pand %%xmm5, %%xmm1 \n\t"
+        "pxor %%xmm5, %%xmm6 \n\t"
+        "por %%xmm1, %%xmm7 \n\t"
+        "movdqa %%xmm3, %%xmm8 \n\t"
+        "pand %%xmm13, %%xmm8 \n\t"
+        "movdqa %%xmm4, %%xmm9 \n\t"
+        "pand %%xmm13, %%xmm9 \n\t"
+        "movdqa %%xmm2, %%xmm12 \n\t"
+        "pand %%xmm13, %%xmm12 \n\t"
+        "movdqa %%xmm13, %%xmm0 \n\t"
+        "pandn %%xmm6, %%xmm0 \n\t"
+        "por %%xmm0, %%xmm8 \n\t"
+        "movdqa %%xmm13, %%xmm0 \n\t"
+        "pandn %%xmm7, %%xmm0 \n\t"
+        "por %%xmm0, %%xmm9 \n\t"
+        "movdqa %%xmm13, %%xmm0 \n\t"
+        "pandn %%xmm5, %%xmm0 \n\t"
+        "por %%xmm0, %%xmm12 \n\t"
+        "shufps $0x39, %%xmm8, %%xmm8 \n\t"
+        "shufps $0x39, %%xmm9, %%xmm9 \n\t"
+        "movdqa %%xmm3, %%xmm10 \n\t"
+        "shufps $0x4e, %%xmm6, %%xmm10 \n\t"
+        "movdqa %%xmm4, %%xmm11 \n\t"
+        "shufps $0x4e, %%xmm7, %%xmm11 \n\t"
+        "shufps $0x39, %%xmm12, %%xmm12 \n\t"
+        "pxor %%xmm3, %%xmm8 \n\t"
+        "pxor %%xmm4, %%xmm9 \n\t"
+        "pxor %%xmm8, %%xmm10 \n\t"
+        "pxor %%xmm9, %%xmm11 \n\t"
+        "por %%xmm8, %%xmm3 \n\t"
+        "por %%xmm9, %%xmm4 \n\t"
+        "pand %%xmm10, %%xmm8 \n\t"
+        "pand %%xmm11, %%xmm9 \n\t"
+        "pandn %%xmm3, %%xmm8 \n\t"
+        "pandn %%xmm4, %%xmm9 \n\t"
+#include "ll_sse2_b3s23.asm"
+        "pand %%xmm14, %%xmm10 \n\t"
+        "movups 24(%0), %%xmm8 \n\t"
+        "movdqa %%xmm14, %%xmm11 \n\t"
+        "pandn %%xmm8, %%xmm11 \n\t"
+        "por %%xmm10, %%xmm11 \n\t"
+        "movups %%xmm11, 24(%0) \n\t"
+        "pxor %%xmm11, %%xmm8 \n\t"
+        "por %%xmm8, %%xmm15 \n\t"
+        "movups %%xmm8, 32(%1) \n\t"
+        "movups %%xmm15, 16(%1) \n\t"
+                : /* no output operands */ 
+                : "r" (d), "r" (e), "r" (apg::__sixteen8)
+                : "ebx", "xmm0", "xmm1", "xmm2", "xmm3", "xmm4", 
+                    "xmm5", "xmm6", "xmm7", "xmm8", "xmm9", "xmm10", 
+                    "xmm11", "xmm12", "xmm13", "xmm14", "xmm15", "memory");
+
+        if (h) {
+            for (int i = 2; i < 10; i++) {
+                h[i] |= d[i];
+            }
+        }
+        if (j) {
+            for (int i = 2; i < 10; i++) {
+                j[i] &= d[i];
+            }
+        }
+        uint32_t bigdiff = e[4] | e[5] | e[6] | e[7];
+        if (diffs != 0) {
+        diffs[0] = bigdiff;
+        diffs[1] = e[0] | e[1];
+        diffs[2] = e[10] | e[11];
+        }
+        return (bigdiff == 0);
+    }
+
     int iterate_var_sse2(int n, uint32_t * __restrict__ d, uint32_t * __restrict__ h, uint32_t * __restrict__ j) {
         uint32_t e[32];
         if (n >= 7) { if (iterate_sse2_32_28(d, e, h, j, 0, (n == 7))) {return 8;} }
@@ -4886,6 +5661,608 @@ namespace b3s23 {
         return (bigdiff == 0);
     }
 
+    bool iterate_avx_16_12(uint32_t * __restrict__ d, uint32_t * __restrict__ e, uint32_t * __restrict__ h, uint32_t * __restrict__ j, uint32_t * __restrict__ diffs, bool onegen) {
+        if (h) {
+            for (int i = 0; i < 16; i++) {
+                h[i] |= d[i];
+            }
+        }
+        if (j) {
+            for (int i = 0; i < 16; i++) {
+                j[i] &= d[i];
+            }
+        }
+        asm (
+        "mov $0xffffffff, %%ebx \n\t"
+        "movd %%ebx, %%xmm13 \n\t"
+        "mov $0x003ffc00, %%ebx \n\t"
+        "movd %%ebx, %%xmm14 \n\t"
+        "vpshufd $1, %%xmm13, %%xmm13 \n\t"
+        "vpshufd $0, %%xmm14, %%xmm14 \n\t"
+        "vmovdqu (%0), %%xmm5 \n\t"
+        "vpsrld $1, %%xmm5, %%xmm0 \n\t"
+        "vpslld $1, %%xmm5, %%xmm1 \n\t"
+        "vpxor %%xmm0, %%xmm1, %%xmm6 \n\t"
+        "vpand %%xmm0, %%xmm1, %%xmm7 \n\t"
+        "vpand %%xmm5, %%xmm6, %%xmm1 \n\t"
+        "vpxor %%xmm5, %%xmm6, %%xmm6 \n\t"
+        "vpor %%xmm1, %%xmm7, %%xmm7 \n\t"
+        "vmovdqu 16(%0), %%xmm2 \n\t"
+        "vpsrld $1, %%xmm2, %%xmm0 \n\t"
+        "vpslld $1, %%xmm2, %%xmm1 \n\t"
+        "vpxor %%xmm0, %%xmm1, %%xmm3 \n\t"
+        "vpand %%xmm0, %%xmm1, %%xmm4 \n\t"
+        "vpand %%xmm2, %%xmm3, %%xmm1 \n\t"
+        "vpxor %%xmm2, %%xmm3, %%xmm3 \n\t"
+        "vpor %%xmm1, %%xmm4, %%xmm4 \n\t"
+        "vpand %%xmm13, %%xmm6, %%xmm8 \n\t"
+        "vpand %%xmm13, %%xmm7, %%xmm9 \n\t"
+        "vpand %%xmm13, %%xmm5, %%xmm12 \n\t"
+        "vpandn %%xmm3, %%xmm13, %%xmm0 \n\t"
+        "vpor %%xmm0, %%xmm8, %%xmm8 \n\t"
+        "vpandn %%xmm4, %%xmm13, %%xmm0 \n\t"
+        "vpor %%xmm0, %%xmm9, %%xmm9 \n\t"
+        "vpandn %%xmm2, %%xmm13, %%xmm0 \n\t"
+        "vpor %%xmm0, %%xmm12, %%xmm12 \n\t"
+        "vshufps $0x39, %%xmm8, %%xmm8, %%xmm8 \n\t"
+        "vshufps $0x39, %%xmm9, %%xmm9, %%xmm9 \n\t"
+        "vshufps $0x4e, %%xmm3, %%xmm6, %%xmm10 \n\t"
+        "vshufps $0x4e, %%xmm4, %%xmm7, %%xmm11 \n\t"
+        "vshufps $0x39, %%xmm12, %%xmm12, %%xmm12 \n\t"
+        "vpxor %%xmm6, %%xmm8, %%xmm8 \n\t"
+        "vpxor %%xmm7, %%xmm9, %%xmm9 \n\t"
+        "vpxor %%xmm8, %%xmm10, %%xmm10 \n\t"
+        "vpxor %%xmm9, %%xmm11, %%xmm11 \n\t"
+        "vpor %%xmm8, %%xmm6, %%xmm6 \n\t"
+        "vpor %%xmm9, %%xmm7, %%xmm7 \n\t"
+        "vpand %%xmm10, %%xmm8, %%xmm8 \n\t"
+        "vpand %%xmm11, %%xmm9, %%xmm9 \n\t"
+        "vpandn %%xmm6, %%xmm8, %%xmm8 \n\t"
+        "vpandn %%xmm7, %%xmm9, %%xmm9 \n\t"
+#include "ll_avx_b3s23.asm"
+        "vmovdqu %%xmm10, (%1) \n\t"
+        "vmovdqu 32(%0), %%xmm5 \n\t"
+        "vpsrld $1, %%xmm5, %%xmm0 \n\t"
+        "vpslld $1, %%xmm5, %%xmm1 \n\t"
+        "vpxor %%xmm0, %%xmm1, %%xmm6 \n\t"
+        "vpand %%xmm0, %%xmm1, %%xmm7 \n\t"
+        "vpand %%xmm5, %%xmm6, %%xmm1 \n\t"
+        "vpxor %%xmm5, %%xmm6, %%xmm6 \n\t"
+        "vpor %%xmm1, %%xmm7, %%xmm7 \n\t"
+        "vpand %%xmm13, %%xmm3, %%xmm8 \n\t"
+        "vpand %%xmm13, %%xmm4, %%xmm9 \n\t"
+        "vpand %%xmm13, %%xmm2, %%xmm12 \n\t"
+        "vpandn %%xmm6, %%xmm13, %%xmm0 \n\t"
+        "vpor %%xmm0, %%xmm8, %%xmm8 \n\t"
+        "vpandn %%xmm7, %%xmm13, %%xmm0 \n\t"
+        "vpor %%xmm0, %%xmm9, %%xmm9 \n\t"
+        "vpandn %%xmm5, %%xmm13, %%xmm0 \n\t"
+        "vpor %%xmm0, %%xmm12, %%xmm12 \n\t"
+        "vshufps $0x39, %%xmm8, %%xmm8, %%xmm8 \n\t"
+        "vshufps $0x39, %%xmm9, %%xmm9, %%xmm9 \n\t"
+        "vshufps $0x4e, %%xmm6, %%xmm3, %%xmm10 \n\t"
+        "vshufps $0x4e, %%xmm7, %%xmm4, %%xmm11 \n\t"
+        "vshufps $0x39, %%xmm12, %%xmm12, %%xmm12 \n\t"
+        "vpxor %%xmm3, %%xmm8, %%xmm8 \n\t"
+        "vpxor %%xmm4, %%xmm9, %%xmm9 \n\t"
+        "vpxor %%xmm8, %%xmm10, %%xmm10 \n\t"
+        "vpxor %%xmm9, %%xmm11, %%xmm11 \n\t"
+        "vpor %%xmm8, %%xmm3, %%xmm3 \n\t"
+        "vpor %%xmm9, %%xmm4, %%xmm4 \n\t"
+        "vpand %%xmm10, %%xmm8, %%xmm8 \n\t"
+        "vpand %%xmm11, %%xmm9, %%xmm9 \n\t"
+        "vpandn %%xmm3, %%xmm8, %%xmm8 \n\t"
+        "vpandn %%xmm4, %%xmm9, %%xmm9 \n\t"
+#include "ll_avx_b3s23.asm"
+        "vmovdqu %%xmm10, 16(%1) \n\t"
+        "vmovdqu 48(%0), %%xmm2 \n\t"
+        "vpsrld $1, %%xmm2, %%xmm0 \n\t"
+        "vpslld $1, %%xmm2, %%xmm1 \n\t"
+        "vpxor %%xmm0, %%xmm1, %%xmm3 \n\t"
+        "vpand %%xmm0, %%xmm1, %%xmm4 \n\t"
+        "vpand %%xmm2, %%xmm3, %%xmm1 \n\t"
+        "vpxor %%xmm2, %%xmm3, %%xmm3 \n\t"
+        "vpor %%xmm1, %%xmm4, %%xmm4 \n\t"
+        "vpand %%xmm13, %%xmm6, %%xmm8 \n\t"
+        "vpand %%xmm13, %%xmm7, %%xmm9 \n\t"
+        "vpand %%xmm13, %%xmm5, %%xmm12 \n\t"
+        "vpandn %%xmm3, %%xmm13, %%xmm0 \n\t"
+        "vpor %%xmm0, %%xmm8, %%xmm8 \n\t"
+        "vpandn %%xmm4, %%xmm13, %%xmm0 \n\t"
+        "vpor %%xmm0, %%xmm9, %%xmm9 \n\t"
+        "vpandn %%xmm2, %%xmm13, %%xmm0 \n\t"
+        "vpor %%xmm0, %%xmm12, %%xmm12 \n\t"
+        "vshufps $0x39, %%xmm8, %%xmm8, %%xmm8 \n\t"
+        "vshufps $0x39, %%xmm9, %%xmm9, %%xmm9 \n\t"
+        "vshufps $0x4e, %%xmm3, %%xmm6, %%xmm10 \n\t"
+        "vshufps $0x4e, %%xmm4, %%xmm7, %%xmm11 \n\t"
+        "vshufps $0x39, %%xmm12, %%xmm12, %%xmm12 \n\t"
+        "vpxor %%xmm6, %%xmm8, %%xmm8 \n\t"
+        "vpxor %%xmm7, %%xmm9, %%xmm9 \n\t"
+        "vpxor %%xmm8, %%xmm10, %%xmm10 \n\t"
+        "vpxor %%xmm9, %%xmm11, %%xmm11 \n\t"
+        "vpor %%xmm8, %%xmm6, %%xmm6 \n\t"
+        "vpor %%xmm9, %%xmm7, %%xmm7 \n\t"
+        "vpand %%xmm10, %%xmm8, %%xmm8 \n\t"
+        "vpand %%xmm11, %%xmm9, %%xmm9 \n\t"
+        "vpandn %%xmm6, %%xmm8, %%xmm8 \n\t"
+        "vpandn %%xmm7, %%xmm9, %%xmm9 \n\t"
+#include "ll_avx_b3s23.asm"
+        "vmovdqu %%xmm10, 32(%1) \n\t"
+        "vpand %%xmm13, %%xmm3, %%xmm8 \n\t"
+        "vpand %%xmm13, %%xmm4, %%xmm9 \n\t"
+        "vpand %%xmm13, %%xmm2, %%xmm12 \n\t"
+        "vpandn %%xmm6, %%xmm13, %%xmm0 \n\t"
+        "vpor %%xmm0, %%xmm8, %%xmm8 \n\t"
+        "vpandn %%xmm7, %%xmm13, %%xmm0 \n\t"
+        "vpor %%xmm0, %%xmm9, %%xmm9 \n\t"
+        "vpandn %%xmm5, %%xmm13, %%xmm0 \n\t"
+        "vpor %%xmm0, %%xmm12, %%xmm12 \n\t"
+        "vshufps $0x39, %%xmm8, %%xmm8, %%xmm8 \n\t"
+        "vshufps $0x39, %%xmm9, %%xmm9, %%xmm9 \n\t"
+        "vshufps $0x4e, %%xmm6, %%xmm3, %%xmm10 \n\t"
+        "vshufps $0x4e, %%xmm7, %%xmm4, %%xmm11 \n\t"
+        "vshufps $0x39, %%xmm12, %%xmm12, %%xmm12 \n\t"
+        "vpxor %%xmm3, %%xmm8, %%xmm8 \n\t"
+        "vpxor %%xmm4, %%xmm9, %%xmm9 \n\t"
+        "vpxor %%xmm8, %%xmm10, %%xmm10 \n\t"
+        "vpxor %%xmm9, %%xmm11, %%xmm11 \n\t"
+        "vpor %%xmm8, %%xmm3, %%xmm3 \n\t"
+        "vpor %%xmm9, %%xmm4, %%xmm4 \n\t"
+        "vpand %%xmm10, %%xmm8, %%xmm8 \n\t"
+        "vpand %%xmm11, %%xmm9, %%xmm9 \n\t"
+        "vpandn %%xmm3, %%xmm8, %%xmm8 \n\t"
+        "vpandn %%xmm4, %%xmm9, %%xmm9 \n\t"
+#include "ll_avx_b3s23.asm"
+        "vmovdqu %%xmm10, 48(%1) \n\t"
+                : /* no output operands */ 
+                : "r" (d), "r" (e), "r" (apg::__sixteen12)
+                : "ebx", "xmm0", "xmm1", "xmm2", "xmm3", "xmm4", 
+                    "xmm5", "xmm6", "xmm7", "xmm8", "xmm9", "xmm10", 
+                    "xmm11", "xmm12", "xmm13", "xmm14", "xmm15", "memory");
+
+        if (h) {
+            for (int i = 1; i < 15; i++) {
+                h[i] |= e[i-1];
+            }
+        }
+        if (j) {
+            for (int i = 1; i < 15; i++) {
+                j[i] &= e[i-1];
+            }
+        }
+        if (onegen) {
+            for (int i = 2; i < 14; i++) {
+                d[i] = e[i-1];
+            }
+            return false;
+        }
+        asm (
+        "mov $0xffffffff, %%ebx \n\t"
+        "movd %%ebx, %%xmm13 \n\t"
+        "mov $0x003ffc00, %%ebx \n\t"
+        "movd %%ebx, %%xmm14 \n\t"
+        "vpshufd $1, %%xmm13, %%xmm13 \n\t"
+        "vpshufd $0, %%xmm14, %%xmm14 \n\t"
+        "vmovdqu (%1), %%xmm5 \n\t"
+        "vpsrld $1, %%xmm5, %%xmm0 \n\t"
+        "vpslld $1, %%xmm5, %%xmm1 \n\t"
+        "vpxor %%xmm0, %%xmm1, %%xmm6 \n\t"
+        "vpand %%xmm0, %%xmm1, %%xmm7 \n\t"
+        "vpand %%xmm5, %%xmm6, %%xmm1 \n\t"
+        "vpxor %%xmm5, %%xmm6, %%xmm6 \n\t"
+        "vpor %%xmm1, %%xmm7, %%xmm7 \n\t"
+        "vmovdqu 16(%1), %%xmm2 \n\t"
+        "vpsrld $1, %%xmm2, %%xmm0 \n\t"
+        "vpslld $1, %%xmm2, %%xmm1 \n\t"
+        "vpxor %%xmm0, %%xmm1, %%xmm3 \n\t"
+        "vpand %%xmm0, %%xmm1, %%xmm4 \n\t"
+        "vpand %%xmm2, %%xmm3, %%xmm1 \n\t"
+        "vpxor %%xmm2, %%xmm3, %%xmm3 \n\t"
+        "vpor %%xmm1, %%xmm4, %%xmm4 \n\t"
+        "vpand %%xmm13, %%xmm6, %%xmm8 \n\t"
+        "vpand %%xmm13, %%xmm7, %%xmm9 \n\t"
+        "vpand %%xmm13, %%xmm5, %%xmm12 \n\t"
+        "vpandn %%xmm3, %%xmm13, %%xmm0 \n\t"
+        "vpor %%xmm0, %%xmm8, %%xmm8 \n\t"
+        "vpandn %%xmm4, %%xmm13, %%xmm0 \n\t"
+        "vpor %%xmm0, %%xmm9, %%xmm9 \n\t"
+        "vpandn %%xmm2, %%xmm13, %%xmm0 \n\t"
+        "vpor %%xmm0, %%xmm12, %%xmm12 \n\t"
+        "vshufps $0x39, %%xmm8, %%xmm8, %%xmm8 \n\t"
+        "vshufps $0x39, %%xmm9, %%xmm9, %%xmm9 \n\t"
+        "vshufps $0x4e, %%xmm3, %%xmm6, %%xmm10 \n\t"
+        "vshufps $0x4e, %%xmm4, %%xmm7, %%xmm11 \n\t"
+        "vshufps $0x39, %%xmm12, %%xmm12, %%xmm12 \n\t"
+        "vpxor %%xmm6, %%xmm8, %%xmm8 \n\t"
+        "vpxor %%xmm7, %%xmm9, %%xmm9 \n\t"
+        "vpxor %%xmm8, %%xmm10, %%xmm10 \n\t"
+        "vpxor %%xmm9, %%xmm11, %%xmm11 \n\t"
+        "vpor %%xmm8, %%xmm6, %%xmm6 \n\t"
+        "vpor %%xmm9, %%xmm7, %%xmm7 \n\t"
+        "vpand %%xmm10, %%xmm8, %%xmm8 \n\t"
+        "vpand %%xmm11, %%xmm9, %%xmm9 \n\t"
+        "vpandn %%xmm6, %%xmm8, %%xmm8 \n\t"
+        "vpandn %%xmm7, %%xmm9, %%xmm9 \n\t"
+#include "ll_avx_b3s23.asm"
+        "vpand %%xmm14, %%xmm10, %%xmm10 \n\t"
+        "vmovdqu 8(%0), %%xmm8 \n\t"
+        "vpandn %%xmm8, %%xmm14, %%xmm11 \n\t"
+        "vpor %%xmm10, %%xmm11, %%xmm11 \n\t"
+        "vmovdqu %%xmm11, 8(%0) \n\t"
+        "vpxor %%xmm11, %%xmm8, %%xmm15 \n\t"
+        "vmovdqu %%xmm15, (%1) \n\t"
+        "vmovdqu 32(%1), %%xmm5 \n\t"
+        "vpsrld $1, %%xmm5, %%xmm0 \n\t"
+        "vpslld $1, %%xmm5, %%xmm1 \n\t"
+        "vpxor %%xmm0, %%xmm1, %%xmm6 \n\t"
+        "vpand %%xmm0, %%xmm1, %%xmm7 \n\t"
+        "vpand %%xmm5, %%xmm6, %%xmm1 \n\t"
+        "vpxor %%xmm5, %%xmm6, %%xmm6 \n\t"
+        "vpor %%xmm1, %%xmm7, %%xmm7 \n\t"
+        "vpand %%xmm13, %%xmm3, %%xmm8 \n\t"
+        "vpand %%xmm13, %%xmm4, %%xmm9 \n\t"
+        "vpand %%xmm13, %%xmm2, %%xmm12 \n\t"
+        "vpandn %%xmm6, %%xmm13, %%xmm0 \n\t"
+        "vpor %%xmm0, %%xmm8, %%xmm8 \n\t"
+        "vpandn %%xmm7, %%xmm13, %%xmm0 \n\t"
+        "vpor %%xmm0, %%xmm9, %%xmm9 \n\t"
+        "vpandn %%xmm5, %%xmm13, %%xmm0 \n\t"
+        "vpor %%xmm0, %%xmm12, %%xmm12 \n\t"
+        "vshufps $0x39, %%xmm8, %%xmm8, %%xmm8 \n\t"
+        "vshufps $0x39, %%xmm9, %%xmm9, %%xmm9 \n\t"
+        "vshufps $0x4e, %%xmm6, %%xmm3, %%xmm10 \n\t"
+        "vshufps $0x4e, %%xmm7, %%xmm4, %%xmm11 \n\t"
+        "vshufps $0x39, %%xmm12, %%xmm12, %%xmm12 \n\t"
+        "vpxor %%xmm3, %%xmm8, %%xmm8 \n\t"
+        "vpxor %%xmm4, %%xmm9, %%xmm9 \n\t"
+        "vpxor %%xmm8, %%xmm10, %%xmm10 \n\t"
+        "vpxor %%xmm9, %%xmm11, %%xmm11 \n\t"
+        "vpor %%xmm8, %%xmm3, %%xmm3 \n\t"
+        "vpor %%xmm9, %%xmm4, %%xmm4 \n\t"
+        "vpand %%xmm10, %%xmm8, %%xmm8 \n\t"
+        "vpand %%xmm11, %%xmm9, %%xmm9 \n\t"
+        "vpandn %%xmm3, %%xmm8, %%xmm8 \n\t"
+        "vpandn %%xmm4, %%xmm9, %%xmm9 \n\t"
+#include "ll_avx_b3s23.asm"
+        "vpand %%xmm14, %%xmm10, %%xmm10 \n\t"
+        "vmovdqu 24(%0), %%xmm8 \n\t"
+        "vpandn %%xmm8, %%xmm14, %%xmm11 \n\t"
+        "vpor %%xmm10, %%xmm11, %%xmm11 \n\t"
+        "vmovdqu %%xmm11, 24(%0) \n\t"
+        "vpxor %%xmm11, %%xmm8, %%xmm8 \n\t"
+        "vpor %%xmm8, %%xmm15, %%xmm15 \n\t"
+        "vmovdqu 48(%1), %%xmm2 \n\t"
+        "vpsrld $1, %%xmm2, %%xmm0 \n\t"
+        "vpslld $1, %%xmm2, %%xmm1 \n\t"
+        "vpxor %%xmm0, %%xmm1, %%xmm3 \n\t"
+        "vpand %%xmm0, %%xmm1, %%xmm4 \n\t"
+        "vpand %%xmm2, %%xmm3, %%xmm1 \n\t"
+        "vpxor %%xmm2, %%xmm3, %%xmm3 \n\t"
+        "vpor %%xmm1, %%xmm4, %%xmm4 \n\t"
+        "vpand %%xmm13, %%xmm6, %%xmm8 \n\t"
+        "vpand %%xmm13, %%xmm7, %%xmm9 \n\t"
+        "vpand %%xmm13, %%xmm5, %%xmm12 \n\t"
+        "vpandn %%xmm3, %%xmm13, %%xmm0 \n\t"
+        "vpor %%xmm0, %%xmm8, %%xmm8 \n\t"
+        "vpandn %%xmm4, %%xmm13, %%xmm0 \n\t"
+        "vpor %%xmm0, %%xmm9, %%xmm9 \n\t"
+        "vpandn %%xmm2, %%xmm13, %%xmm0 \n\t"
+        "vpor %%xmm0, %%xmm12, %%xmm12 \n\t"
+        "vshufps $0x39, %%xmm8, %%xmm8, %%xmm8 \n\t"
+        "vshufps $0x39, %%xmm9, %%xmm9, %%xmm9 \n\t"
+        "vshufps $0x4e, %%xmm3, %%xmm6, %%xmm10 \n\t"
+        "vshufps $0x4e, %%xmm4, %%xmm7, %%xmm11 \n\t"
+        "vshufps $0x39, %%xmm12, %%xmm12, %%xmm12 \n\t"
+        "vpxor %%xmm6, %%xmm8, %%xmm8 \n\t"
+        "vpxor %%xmm7, %%xmm9, %%xmm9 \n\t"
+        "vpxor %%xmm8, %%xmm10, %%xmm10 \n\t"
+        "vpxor %%xmm9, %%xmm11, %%xmm11 \n\t"
+        "vpor %%xmm8, %%xmm6, %%xmm6 \n\t"
+        "vpor %%xmm9, %%xmm7, %%xmm7 \n\t"
+        "vpand %%xmm10, %%xmm8, %%xmm8 \n\t"
+        "vpand %%xmm11, %%xmm9, %%xmm9 \n\t"
+        "vpandn %%xmm6, %%xmm8, %%xmm8 \n\t"
+        "vpandn %%xmm7, %%xmm9, %%xmm9 \n\t"
+#include "ll_avx_b3s23.asm"
+        "vpand %%xmm14, %%xmm10, %%xmm10 \n\t"
+        "vmovdqu 40(%0), %%xmm8 \n\t"
+        "vpandn %%xmm8, %%xmm14, %%xmm11 \n\t"
+        "vpor %%xmm10, %%xmm11, %%xmm11 \n\t"
+        "vmovdqu %%xmm11, 40(%0) \n\t"
+        "vpxor %%xmm11, %%xmm8, %%xmm8 \n\t"
+        "vpor %%xmm8, %%xmm15, %%xmm15 \n\t"
+        "vmovdqu %%xmm8, 32(%1) \n\t"
+        "vmovdqu %%xmm15, 16(%1) \n\t"
+                : /* no output operands */ 
+                : "r" (d), "r" (e), "r" (apg::__sixteen12)
+                : "ebx", "xmm0", "xmm1", "xmm2", "xmm3", "xmm4", 
+                    "xmm5", "xmm6", "xmm7", "xmm8", "xmm9", "xmm10", 
+                    "xmm11", "xmm12", "xmm13", "xmm14", "xmm15", "memory");
+
+        if (h) {
+            for (int i = 2; i < 14; i++) {
+                h[i] |= d[i];
+            }
+        }
+        if (j) {
+            for (int i = 2; i < 14; i++) {
+                j[i] &= d[i];
+            }
+        }
+        uint32_t bigdiff = e[4] | e[5] | e[6] | e[7];
+        if (diffs != 0) {
+        diffs[0] = bigdiff;
+        diffs[1] = e[0] | e[1];
+        diffs[2] = e[10] | e[11];
+        }
+        return (bigdiff == 0);
+    }
+
+    bool iterate_avx_12_8(uint32_t * __restrict__ d, uint32_t * __restrict__ e, uint32_t * __restrict__ h, uint32_t * __restrict__ j, uint32_t * __restrict__ diffs, bool onegen) {
+        if (h) {
+            for (int i = 0; i < 12; i++) {
+                h[i] |= d[i];
+            }
+        }
+        if (j) {
+            for (int i = 0; i < 12; i++) {
+                j[i] &= d[i];
+            }
+        }
+        asm (
+        "mov $0xffffffff, %%ebx \n\t"
+        "movd %%ebx, %%xmm13 \n\t"
+        "mov $0x000ff000, %%ebx \n\t"
+        "movd %%ebx, %%xmm14 \n\t"
+        "vpshufd $1, %%xmm13, %%xmm13 \n\t"
+        "vpshufd $0, %%xmm14, %%xmm14 \n\t"
+        "vmovdqu (%0), %%xmm5 \n\t"
+        "vpsrld $1, %%xmm5, %%xmm0 \n\t"
+        "vpslld $1, %%xmm5, %%xmm1 \n\t"
+        "vpxor %%xmm0, %%xmm1, %%xmm6 \n\t"
+        "vpand %%xmm0, %%xmm1, %%xmm7 \n\t"
+        "vpand %%xmm5, %%xmm6, %%xmm1 \n\t"
+        "vpxor %%xmm5, %%xmm6, %%xmm6 \n\t"
+        "vpor %%xmm1, %%xmm7, %%xmm7 \n\t"
+        "vmovdqu 16(%0), %%xmm2 \n\t"
+        "vpsrld $1, %%xmm2, %%xmm0 \n\t"
+        "vpslld $1, %%xmm2, %%xmm1 \n\t"
+        "vpxor %%xmm0, %%xmm1, %%xmm3 \n\t"
+        "vpand %%xmm0, %%xmm1, %%xmm4 \n\t"
+        "vpand %%xmm2, %%xmm3, %%xmm1 \n\t"
+        "vpxor %%xmm2, %%xmm3, %%xmm3 \n\t"
+        "vpor %%xmm1, %%xmm4, %%xmm4 \n\t"
+        "vpand %%xmm13, %%xmm6, %%xmm8 \n\t"
+        "vpand %%xmm13, %%xmm7, %%xmm9 \n\t"
+        "vpand %%xmm13, %%xmm5, %%xmm12 \n\t"
+        "vpandn %%xmm3, %%xmm13, %%xmm0 \n\t"
+        "vpor %%xmm0, %%xmm8, %%xmm8 \n\t"
+        "vpandn %%xmm4, %%xmm13, %%xmm0 \n\t"
+        "vpor %%xmm0, %%xmm9, %%xmm9 \n\t"
+        "vpandn %%xmm2, %%xmm13, %%xmm0 \n\t"
+        "vpor %%xmm0, %%xmm12, %%xmm12 \n\t"
+        "vshufps $0x39, %%xmm8, %%xmm8, %%xmm8 \n\t"
+        "vshufps $0x39, %%xmm9, %%xmm9, %%xmm9 \n\t"
+        "vshufps $0x4e, %%xmm3, %%xmm6, %%xmm10 \n\t"
+        "vshufps $0x4e, %%xmm4, %%xmm7, %%xmm11 \n\t"
+        "vshufps $0x39, %%xmm12, %%xmm12, %%xmm12 \n\t"
+        "vpxor %%xmm6, %%xmm8, %%xmm8 \n\t"
+        "vpxor %%xmm7, %%xmm9, %%xmm9 \n\t"
+        "vpxor %%xmm8, %%xmm10, %%xmm10 \n\t"
+        "vpxor %%xmm9, %%xmm11, %%xmm11 \n\t"
+        "vpor %%xmm8, %%xmm6, %%xmm6 \n\t"
+        "vpor %%xmm9, %%xmm7, %%xmm7 \n\t"
+        "vpand %%xmm10, %%xmm8, %%xmm8 \n\t"
+        "vpand %%xmm11, %%xmm9, %%xmm9 \n\t"
+        "vpandn %%xmm6, %%xmm8, %%xmm8 \n\t"
+        "vpandn %%xmm7, %%xmm9, %%xmm9 \n\t"
+#include "ll_avx_b3s23.asm"
+        "vmovdqu %%xmm10, (%1) \n\t"
+        "vmovdqu 32(%0), %%xmm5 \n\t"
+        "vpsrld $1, %%xmm5, %%xmm0 \n\t"
+        "vpslld $1, %%xmm5, %%xmm1 \n\t"
+        "vpxor %%xmm0, %%xmm1, %%xmm6 \n\t"
+        "vpand %%xmm0, %%xmm1, %%xmm7 \n\t"
+        "vpand %%xmm5, %%xmm6, %%xmm1 \n\t"
+        "vpxor %%xmm5, %%xmm6, %%xmm6 \n\t"
+        "vpor %%xmm1, %%xmm7, %%xmm7 \n\t"
+        "vpand %%xmm13, %%xmm3, %%xmm8 \n\t"
+        "vpand %%xmm13, %%xmm4, %%xmm9 \n\t"
+        "vpand %%xmm13, %%xmm2, %%xmm12 \n\t"
+        "vpandn %%xmm6, %%xmm13, %%xmm0 \n\t"
+        "vpor %%xmm0, %%xmm8, %%xmm8 \n\t"
+        "vpandn %%xmm7, %%xmm13, %%xmm0 \n\t"
+        "vpor %%xmm0, %%xmm9, %%xmm9 \n\t"
+        "vpandn %%xmm5, %%xmm13, %%xmm0 \n\t"
+        "vpor %%xmm0, %%xmm12, %%xmm12 \n\t"
+        "vshufps $0x39, %%xmm8, %%xmm8, %%xmm8 \n\t"
+        "vshufps $0x39, %%xmm9, %%xmm9, %%xmm9 \n\t"
+        "vshufps $0x4e, %%xmm6, %%xmm3, %%xmm10 \n\t"
+        "vshufps $0x4e, %%xmm7, %%xmm4, %%xmm11 \n\t"
+        "vshufps $0x39, %%xmm12, %%xmm12, %%xmm12 \n\t"
+        "vpxor %%xmm3, %%xmm8, %%xmm8 \n\t"
+        "vpxor %%xmm4, %%xmm9, %%xmm9 \n\t"
+        "vpxor %%xmm8, %%xmm10, %%xmm10 \n\t"
+        "vpxor %%xmm9, %%xmm11, %%xmm11 \n\t"
+        "vpor %%xmm8, %%xmm3, %%xmm3 \n\t"
+        "vpor %%xmm9, %%xmm4, %%xmm4 \n\t"
+        "vpand %%xmm10, %%xmm8, %%xmm8 \n\t"
+        "vpand %%xmm11, %%xmm9, %%xmm9 \n\t"
+        "vpandn %%xmm3, %%xmm8, %%xmm8 \n\t"
+        "vpandn %%xmm4, %%xmm9, %%xmm9 \n\t"
+#include "ll_avx_b3s23.asm"
+        "vmovdqu %%xmm10, 16(%1) \n\t"
+        "vpand %%xmm13, %%xmm6, %%xmm8 \n\t"
+        "vpand %%xmm13, %%xmm7, %%xmm9 \n\t"
+        "vpand %%xmm13, %%xmm5, %%xmm12 \n\t"
+        "vpandn %%xmm3, %%xmm13, %%xmm0 \n\t"
+        "vpor %%xmm0, %%xmm8, %%xmm8 \n\t"
+        "vpandn %%xmm4, %%xmm13, %%xmm0 \n\t"
+        "vpor %%xmm0, %%xmm9, %%xmm9 \n\t"
+        "vpandn %%xmm2, %%xmm13, %%xmm0 \n\t"
+        "vpor %%xmm0, %%xmm12, %%xmm12 \n\t"
+        "vshufps $0x39, %%xmm8, %%xmm8, %%xmm8 \n\t"
+        "vshufps $0x39, %%xmm9, %%xmm9, %%xmm9 \n\t"
+        "vshufps $0x4e, %%xmm3, %%xmm6, %%xmm10 \n\t"
+        "vshufps $0x4e, %%xmm4, %%xmm7, %%xmm11 \n\t"
+        "vshufps $0x39, %%xmm12, %%xmm12, %%xmm12 \n\t"
+        "vpxor %%xmm6, %%xmm8, %%xmm8 \n\t"
+        "vpxor %%xmm7, %%xmm9, %%xmm9 \n\t"
+        "vpxor %%xmm8, %%xmm10, %%xmm10 \n\t"
+        "vpxor %%xmm9, %%xmm11, %%xmm11 \n\t"
+        "vpor %%xmm8, %%xmm6, %%xmm6 \n\t"
+        "vpor %%xmm9, %%xmm7, %%xmm7 \n\t"
+        "vpand %%xmm10, %%xmm8, %%xmm8 \n\t"
+        "vpand %%xmm11, %%xmm9, %%xmm9 \n\t"
+        "vpandn %%xmm6, %%xmm8, %%xmm8 \n\t"
+        "vpandn %%xmm7, %%xmm9, %%xmm9 \n\t"
+#include "ll_avx_b3s23.asm"
+        "vmovdqu %%xmm10, 32(%1) \n\t"
+                : /* no output operands */ 
+                : "r" (d), "r" (e), "r" (apg::__sixteen8)
+                : "ebx", "xmm0", "xmm1", "xmm2", "xmm3", "xmm4", 
+                    "xmm5", "xmm6", "xmm7", "xmm8", "xmm9", "xmm10", 
+                    "xmm11", "xmm12", "xmm13", "xmm14", "xmm15", "memory");
+
+        if (h) {
+            for (int i = 1; i < 11; i++) {
+                h[i] |= e[i-1];
+            }
+        }
+        if (j) {
+            for (int i = 1; i < 11; i++) {
+                j[i] &= e[i-1];
+            }
+        }
+        if (onegen) {
+            for (int i = 2; i < 10; i++) {
+                d[i] = e[i-1];
+            }
+            return false;
+        }
+        asm (
+        "mov $0xffffffff, %%ebx \n\t"
+        "movd %%ebx, %%xmm13 \n\t"
+        "mov $0x000ff000, %%ebx \n\t"
+        "movd %%ebx, %%xmm14 \n\t"
+        "vpshufd $1, %%xmm13, %%xmm13 \n\t"
+        "vpshufd $0, %%xmm14, %%xmm14 \n\t"
+        "vmovdqu (%1), %%xmm5 \n\t"
+        "vpsrld $1, %%xmm5, %%xmm0 \n\t"
+        "vpslld $1, %%xmm5, %%xmm1 \n\t"
+        "vpxor %%xmm0, %%xmm1, %%xmm6 \n\t"
+        "vpand %%xmm0, %%xmm1, %%xmm7 \n\t"
+        "vpand %%xmm5, %%xmm6, %%xmm1 \n\t"
+        "vpxor %%xmm5, %%xmm6, %%xmm6 \n\t"
+        "vpor %%xmm1, %%xmm7, %%xmm7 \n\t"
+        "vmovdqu 16(%1), %%xmm2 \n\t"
+        "vpsrld $1, %%xmm2, %%xmm0 \n\t"
+        "vpslld $1, %%xmm2, %%xmm1 \n\t"
+        "vpxor %%xmm0, %%xmm1, %%xmm3 \n\t"
+        "vpand %%xmm0, %%xmm1, %%xmm4 \n\t"
+        "vpand %%xmm2, %%xmm3, %%xmm1 \n\t"
+        "vpxor %%xmm2, %%xmm3, %%xmm3 \n\t"
+        "vpor %%xmm1, %%xmm4, %%xmm4 \n\t"
+        "vpand %%xmm13, %%xmm6, %%xmm8 \n\t"
+        "vpand %%xmm13, %%xmm7, %%xmm9 \n\t"
+        "vpand %%xmm13, %%xmm5, %%xmm12 \n\t"
+        "vpandn %%xmm3, %%xmm13, %%xmm0 \n\t"
+        "vpor %%xmm0, %%xmm8, %%xmm8 \n\t"
+        "vpandn %%xmm4, %%xmm13, %%xmm0 \n\t"
+        "vpor %%xmm0, %%xmm9, %%xmm9 \n\t"
+        "vpandn %%xmm2, %%xmm13, %%xmm0 \n\t"
+        "vpor %%xmm0, %%xmm12, %%xmm12 \n\t"
+        "vshufps $0x39, %%xmm8, %%xmm8, %%xmm8 \n\t"
+        "vshufps $0x39, %%xmm9, %%xmm9, %%xmm9 \n\t"
+        "vshufps $0x4e, %%xmm3, %%xmm6, %%xmm10 \n\t"
+        "vshufps $0x4e, %%xmm4, %%xmm7, %%xmm11 \n\t"
+        "vshufps $0x39, %%xmm12, %%xmm12, %%xmm12 \n\t"
+        "vpxor %%xmm6, %%xmm8, %%xmm8 \n\t"
+        "vpxor %%xmm7, %%xmm9, %%xmm9 \n\t"
+        "vpxor %%xmm8, %%xmm10, %%xmm10 \n\t"
+        "vpxor %%xmm9, %%xmm11, %%xmm11 \n\t"
+        "vpor %%xmm8, %%xmm6, %%xmm6 \n\t"
+        "vpor %%xmm9, %%xmm7, %%xmm7 \n\t"
+        "vpand %%xmm10, %%xmm8, %%xmm8 \n\t"
+        "vpand %%xmm11, %%xmm9, %%xmm9 \n\t"
+        "vpandn %%xmm6, %%xmm8, %%xmm8 \n\t"
+        "vpandn %%xmm7, %%xmm9, %%xmm9 \n\t"
+#include "ll_avx_b3s23.asm"
+        "vpand %%xmm14, %%xmm10, %%xmm10 \n\t"
+        "vmovdqu 8(%0), %%xmm8 \n\t"
+        "vpandn %%xmm8, %%xmm14, %%xmm11 \n\t"
+        "vpor %%xmm10, %%xmm11, %%xmm11 \n\t"
+        "vmovdqu %%xmm11, 8(%0) \n\t"
+        "vpxor %%xmm11, %%xmm8, %%xmm15 \n\t"
+        "vmovdqu %%xmm15, (%1) \n\t"
+        "vmovdqu 32(%1), %%xmm5 \n\t"
+        "vpsrld $1, %%xmm5, %%xmm0 \n\t"
+        "vpslld $1, %%xmm5, %%xmm1 \n\t"
+        "vpxor %%xmm0, %%xmm1, %%xmm6 \n\t"
+        "vpand %%xmm0, %%xmm1, %%xmm7 \n\t"
+        "vpand %%xmm5, %%xmm6, %%xmm1 \n\t"
+        "vpxor %%xmm5, %%xmm6, %%xmm6 \n\t"
+        "vpor %%xmm1, %%xmm7, %%xmm7 \n\t"
+        "vpand %%xmm13, %%xmm3, %%xmm8 \n\t"
+        "vpand %%xmm13, %%xmm4, %%xmm9 \n\t"
+        "vpand %%xmm13, %%xmm2, %%xmm12 \n\t"
+        "vpandn %%xmm6, %%xmm13, %%xmm0 \n\t"
+        "vpor %%xmm0, %%xmm8, %%xmm8 \n\t"
+        "vpandn %%xmm7, %%xmm13, %%xmm0 \n\t"
+        "vpor %%xmm0, %%xmm9, %%xmm9 \n\t"
+        "vpandn %%xmm5, %%xmm13, %%xmm0 \n\t"
+        "vpor %%xmm0, %%xmm12, %%xmm12 \n\t"
+        "vshufps $0x39, %%xmm8, %%xmm8, %%xmm8 \n\t"
+        "vshufps $0x39, %%xmm9, %%xmm9, %%xmm9 \n\t"
+        "vshufps $0x4e, %%xmm6, %%xmm3, %%xmm10 \n\t"
+        "vshufps $0x4e, %%xmm7, %%xmm4, %%xmm11 \n\t"
+        "vshufps $0x39, %%xmm12, %%xmm12, %%xmm12 \n\t"
+        "vpxor %%xmm3, %%xmm8, %%xmm8 \n\t"
+        "vpxor %%xmm4, %%xmm9, %%xmm9 \n\t"
+        "vpxor %%xmm8, %%xmm10, %%xmm10 \n\t"
+        "vpxor %%xmm9, %%xmm11, %%xmm11 \n\t"
+        "vpor %%xmm8, %%xmm3, %%xmm3 \n\t"
+        "vpor %%xmm9, %%xmm4, %%xmm4 \n\t"
+        "vpand %%xmm10, %%xmm8, %%xmm8 \n\t"
+        "vpand %%xmm11, %%xmm9, %%xmm9 \n\t"
+        "vpandn %%xmm3, %%xmm8, %%xmm8 \n\t"
+        "vpandn %%xmm4, %%xmm9, %%xmm9 \n\t"
+#include "ll_avx_b3s23.asm"
+        "vpand %%xmm14, %%xmm10, %%xmm10 \n\t"
+        "vmovdqu 24(%0), %%xmm8 \n\t"
+        "vpandn %%xmm8, %%xmm14, %%xmm11 \n\t"
+        "vpor %%xmm10, %%xmm11, %%xmm11 \n\t"
+        "vmovdqu %%xmm11, 24(%0) \n\t"
+        "vpxor %%xmm11, %%xmm8, %%xmm8 \n\t"
+        "vpor %%xmm8, %%xmm15, %%xmm15 \n\t"
+        "vmovdqu %%xmm8, 32(%1) \n\t"
+        "vmovdqu %%xmm15, 16(%1) \n\t"
+                : /* no output operands */ 
+                : "r" (d), "r" (e), "r" (apg::__sixteen8)
+                : "ebx", "xmm0", "xmm1", "xmm2", "xmm3", "xmm4", 
+                    "xmm5", "xmm6", "xmm7", "xmm8", "xmm9", "xmm10", 
+                    "xmm11", "xmm12", "xmm13", "xmm14", "xmm15", "memory");
+
+        if (h) {
+            for (int i = 2; i < 10; i++) {
+                h[i] |= d[i];
+            }
+        }
+        if (j) {
+            for (int i = 2; i < 10; i++) {
+                j[i] &= d[i];
+            }
+        }
+        uint32_t bigdiff = e[4] | e[5] | e[6] | e[7];
+        if (diffs != 0) {
+        diffs[0] = bigdiff;
+        diffs[1] = e[0] | e[1];
+        diffs[2] = e[10] | e[11];
+        }
+        return (bigdiff == 0);
+    }
+
     int iterate_var_avx(int n, uint32_t * __restrict__ d, uint32_t * __restrict__ h, uint32_t * __restrict__ j) {
         uint32_t e[32];
         if (n >= 7) { if (iterate_avx_32_28(d, e, h, j, 0, (n == 7))) {return 8;} }
@@ -6045,6 +7422,372 @@ namespace b3s23 {
         return (bigdiff == 0);
     }
 
+    bool iterate_avx2_16_12(uint32_t * __restrict__ d, uint32_t * __restrict__ e, uint32_t * __restrict__ h, uint32_t * __restrict__ j, uint32_t * __restrict__ diffs, bool onegen) {
+        if (h) {
+            for (int i = 0; i < 16; i++) {
+                h[i] |= d[i];
+            }
+        }
+        if (j) {
+            for (int i = 0; i < 16; i++) {
+                j[i] &= d[i];
+            }
+        }
+        asm (
+        "vmovdqu (%2), %%ymm14 \n\t"
+        "vmovdqu 32(%2), %%ymm13 \n\t"
+        "vmovdqu (%0), %%ymm5 \n\t"
+        "vpsrld $1, %%ymm5, %%ymm0 \n\t"
+        "vpslld $1, %%ymm5, %%ymm1 \n\t"
+        "vpxor %%ymm0, %%ymm1, %%ymm6 \n\t"
+        "vpand %%ymm0, %%ymm1, %%ymm7 \n\t"
+        "vpand %%ymm5, %%ymm6, %%ymm1 \n\t"
+        "vpxor %%ymm5, %%ymm6, %%ymm6 \n\t"
+        "vpor %%ymm1, %%ymm7, %%ymm7 \n\t"
+        "vmovdqu 32(%0), %%ymm2 \n\t"
+        "vpsrld $1, %%ymm2, %%ymm0 \n\t"
+        "vpslld $1, %%ymm2, %%ymm1 \n\t"
+        "vpxor %%ymm0, %%ymm1, %%ymm3 \n\t"
+        "vpand %%ymm0, %%ymm1, %%ymm4 \n\t"
+        "vpand %%ymm2, %%ymm3, %%ymm1 \n\t"
+        "vpxor %%ymm2, %%ymm3, %%ymm3 \n\t"
+        "vpor %%ymm1, %%ymm4, %%ymm4 \n\t"
+        "vpblendd $1, %%ymm3, %%ymm6, %%ymm8 \n\t"
+        "vpblendd $1, %%ymm4, %%ymm7, %%ymm9 \n\t"
+        "vpblendd $3, %%ymm3, %%ymm6, %%ymm10 \n\t"
+        "vpblendd $3, %%ymm4, %%ymm7, %%ymm11 \n\t"
+        "vpblendd $1, %%ymm2, %%ymm5, %%ymm12 \n\t"
+        "vpermd %%ymm8, %%ymm13, %%ymm8 \n\t"
+        "vpermd %%ymm9, %%ymm13, %%ymm9 \n\t"
+        "vpermq $57, %%ymm10, %%ymm10 \n\t"
+        "vpermq $57, %%ymm11, %%ymm11 \n\t"
+        "vpermd %%ymm12, %%ymm13, %%ymm12 \n\t"
+        "vpxor %%ymm6, %%ymm8, %%ymm8 \n\t"
+        "vpxor %%ymm7, %%ymm9, %%ymm9 \n\t"
+        "vpxor %%ymm8, %%ymm10, %%ymm10 \n\t"
+        "vpxor %%ymm9, %%ymm11, %%ymm11 \n\t"
+        "vpor %%ymm8, %%ymm6, %%ymm6 \n\t"
+        "vpor %%ymm9, %%ymm7, %%ymm7 \n\t"
+        "vpand %%ymm10, %%ymm8, %%ymm8 \n\t"
+        "vpand %%ymm11, %%ymm9, %%ymm9 \n\t"
+        "vpandn %%ymm6, %%ymm8, %%ymm8 \n\t"
+        "vpandn %%ymm7, %%ymm9, %%ymm9 \n\t"
+#include "ll_avx2_b3s23.asm"
+        "vmovdqu %%ymm10, (%1) \n\t"
+        "vpblendd $1, %%ymm6, %%ymm3, %%ymm8 \n\t"
+        "vpblendd $1, %%ymm7, %%ymm4, %%ymm9 \n\t"
+        "vpblendd $3, %%ymm6, %%ymm3, %%ymm10 \n\t"
+        "vpblendd $3, %%ymm7, %%ymm4, %%ymm11 \n\t"
+        "vpblendd $1, %%ymm5, %%ymm2, %%ymm12 \n\t"
+        "vpermd %%ymm8, %%ymm13, %%ymm8 \n\t"
+        "vpermd %%ymm9, %%ymm13, %%ymm9 \n\t"
+        "vpermq $57, %%ymm10, %%ymm10 \n\t"
+        "vpermq $57, %%ymm11, %%ymm11 \n\t"
+        "vpermd %%ymm12, %%ymm13, %%ymm12 \n\t"
+        "vpxor %%ymm3, %%ymm8, %%ymm8 \n\t"
+        "vpxor %%ymm4, %%ymm9, %%ymm9 \n\t"
+        "vpxor %%ymm8, %%ymm10, %%ymm10 \n\t"
+        "vpxor %%ymm9, %%ymm11, %%ymm11 \n\t"
+        "vpor %%ymm8, %%ymm3, %%ymm3 \n\t"
+        "vpor %%ymm9, %%ymm4, %%ymm4 \n\t"
+        "vpand %%ymm10, %%ymm8, %%ymm8 \n\t"
+        "vpand %%ymm11, %%ymm9, %%ymm9 \n\t"
+        "vpandn %%ymm3, %%ymm8, %%ymm8 \n\t"
+        "vpandn %%ymm4, %%ymm9, %%ymm9 \n\t"
+#include "ll_avx2_b3s23.asm"
+        "vmovdqu %%ymm10, 32(%1) \n\t"
+                : /* no output operands */ 
+                : "r" (d), "r" (e), "r" (apg::__sixteen12)
+                : "ebx", "xmm0", "xmm1", "xmm2", "xmm3", "xmm4", 
+                    "xmm5", "xmm6", "xmm7", "xmm8", "xmm9", "xmm10", 
+                    "xmm11", "xmm12", "xmm13", "xmm14", "xmm15", "memory");
+
+        if (h) {
+            for (int i = 1; i < 15; i++) {
+                h[i] |= e[i-1];
+            }
+        }
+        if (j) {
+            for (int i = 1; i < 15; i++) {
+                j[i] &= e[i-1];
+            }
+        }
+        if (onegen) {
+            for (int i = 2; i < 14; i++) {
+                d[i] = e[i-1];
+            }
+            return false;
+        }
+        asm (
+        "vmovdqu (%2), %%ymm14 \n\t"
+        "vmovdqu 32(%2), %%ymm13 \n\t"
+        "vmovdqu (%1), %%ymm5 \n\t"
+        "vpsrld $1, %%ymm5, %%ymm0 \n\t"
+        "vpslld $1, %%ymm5, %%ymm1 \n\t"
+        "vpxor %%ymm0, %%ymm1, %%ymm6 \n\t"
+        "vpand %%ymm0, %%ymm1, %%ymm7 \n\t"
+        "vpand %%ymm5, %%ymm6, %%ymm1 \n\t"
+        "vpxor %%ymm5, %%ymm6, %%ymm6 \n\t"
+        "vpor %%ymm1, %%ymm7, %%ymm7 \n\t"
+        "vmovdqu 32(%1), %%ymm2 \n\t"
+        "vpsrld $1, %%ymm2, %%ymm0 \n\t"
+        "vpslld $1, %%ymm2, %%ymm1 \n\t"
+        "vpxor %%ymm0, %%ymm1, %%ymm3 \n\t"
+        "vpand %%ymm0, %%ymm1, %%ymm4 \n\t"
+        "vpand %%ymm2, %%ymm3, %%ymm1 \n\t"
+        "vpxor %%ymm2, %%ymm3, %%ymm3 \n\t"
+        "vpor %%ymm1, %%ymm4, %%ymm4 \n\t"
+        "vpblendd $1, %%ymm3, %%ymm6, %%ymm8 \n\t"
+        "vpblendd $1, %%ymm4, %%ymm7, %%ymm9 \n\t"
+        "vpblendd $3, %%ymm3, %%ymm6, %%ymm10 \n\t"
+        "vpblendd $3, %%ymm4, %%ymm7, %%ymm11 \n\t"
+        "vpblendd $1, %%ymm2, %%ymm5, %%ymm12 \n\t"
+        "vpermd %%ymm8, %%ymm13, %%ymm8 \n\t"
+        "vpermd %%ymm9, %%ymm13, %%ymm9 \n\t"
+        "vpermq $57, %%ymm10, %%ymm10 \n\t"
+        "vpermq $57, %%ymm11, %%ymm11 \n\t"
+        "vpermd %%ymm12, %%ymm13, %%ymm12 \n\t"
+        "vpxor %%ymm6, %%ymm8, %%ymm8 \n\t"
+        "vpxor %%ymm7, %%ymm9, %%ymm9 \n\t"
+        "vpxor %%ymm8, %%ymm10, %%ymm10 \n\t"
+        "vpxor %%ymm9, %%ymm11, %%ymm11 \n\t"
+        "vpor %%ymm8, %%ymm6, %%ymm6 \n\t"
+        "vpor %%ymm9, %%ymm7, %%ymm7 \n\t"
+        "vpand %%ymm10, %%ymm8, %%ymm8 \n\t"
+        "vpand %%ymm11, %%ymm9, %%ymm9 \n\t"
+        "vpandn %%ymm6, %%ymm8, %%ymm8 \n\t"
+        "vpandn %%ymm7, %%ymm9, %%ymm9 \n\t"
+#include "ll_avx2_b3s23.asm"
+        "vpand %%ymm14, %%ymm10, %%ymm10 \n\t"
+        "vmovdqu 8(%0), %%ymm8 \n\t"
+        "vpandn %%ymm8, %%ymm14, %%ymm11 \n\t"
+        "vpor %%ymm10, %%ymm11, %%ymm11 \n\t"
+        "vmovdqu %%ymm11, 8(%0) \n\t"
+        "vpxor %%ymm11, %%ymm8, %%ymm15 \n\t"
+        "vmovdqu %%ymm15, (%1) \n\t"
+        "vpblendd $1, %%ymm6, %%ymm3, %%ymm8 \n\t"
+        "vpblendd $1, %%ymm7, %%ymm4, %%ymm9 \n\t"
+        "vpblendd $3, %%ymm6, %%ymm3, %%ymm10 \n\t"
+        "vpblendd $3, %%ymm7, %%ymm4, %%ymm11 \n\t"
+        "vpblendd $1, %%ymm5, %%ymm2, %%ymm12 \n\t"
+        "vpermd %%ymm8, %%ymm13, %%ymm8 \n\t"
+        "vpermd %%ymm9, %%ymm13, %%ymm9 \n\t"
+        "vpermq $57, %%ymm10, %%ymm10 \n\t"
+        "vpermq $57, %%ymm11, %%ymm11 \n\t"
+        "vpermd %%ymm12, %%ymm13, %%ymm12 \n\t"
+        "vpxor %%ymm3, %%ymm8, %%ymm8 \n\t"
+        "vpxor %%ymm4, %%ymm9, %%ymm9 \n\t"
+        "vpxor %%ymm8, %%ymm10, %%ymm10 \n\t"
+        "vpxor %%ymm9, %%ymm11, %%ymm11 \n\t"
+        "vpor %%ymm8, %%ymm3, %%ymm3 \n\t"
+        "vpor %%ymm9, %%ymm4, %%ymm4 \n\t"
+        "vpand %%ymm10, %%ymm8, %%ymm8 \n\t"
+        "vpand %%ymm11, %%ymm9, %%ymm9 \n\t"
+        "vpandn %%ymm3, %%ymm8, %%ymm8 \n\t"
+        "vpandn %%ymm4, %%ymm9, %%ymm9 \n\t"
+#include "ll_avx2_b3s23.asm"
+        "vpand %%xmm14, %%xmm10, %%xmm10 \n\t"
+        "vmovdqu 40(%0), %%xmm8 \n\t"
+        "vpandn %%xmm8, %%xmm14, %%xmm11 \n\t"
+        "vpor %%xmm10, %%xmm11, %%xmm11 \n\t"
+        "vmovdqu %%xmm11, 40(%0) \n\t"
+        "vpxor %%ymm11, %%ymm8, %%ymm8 \n\t"
+        "vpor %%ymm8, %%ymm15, %%ymm15 \n\t"
+        "vmovdqu %%ymm8, 64(%1) \n\t"
+        "vmovdqu %%ymm15, 32(%1) \n\t"
+                : /* no output operands */ 
+                : "r" (d), "r" (e), "r" (apg::__sixteen12)
+                : "ebx", "xmm0", "xmm1", "xmm2", "xmm3", "xmm4", 
+                    "xmm5", "xmm6", "xmm7", "xmm8", "xmm9", "xmm10", 
+                    "xmm11", "xmm12", "xmm13", "xmm14", "xmm15", "memory");
+
+        if (h) {
+            for (int i = 2; i < 14; i++) {
+                h[i] |= d[i];
+            }
+        }
+        if (j) {
+            for (int i = 2; i < 14; i++) {
+                j[i] &= d[i];
+            }
+        }
+        uint32_t bigdiff = e[8] | e[9] | e[10] | e[11] | e[12] | e[13] | e[14] | e[15];
+        if (diffs != 0) {
+        diffs[0] = bigdiff;
+        diffs[1] = e[0] | e[1];
+        diffs[2] = e[18] | e[19];
+        }
+        return (bigdiff == 0);
+    }
+
+    bool iterate_avx2_12_8(uint32_t * __restrict__ d, uint32_t * __restrict__ e, uint32_t * __restrict__ h, uint32_t * __restrict__ j, uint32_t * __restrict__ diffs, bool onegen) {
+        if (h) {
+            for (int i = 0; i < 12; i++) {
+                h[i] |= d[i];
+            }
+        }
+        if (j) {
+            for (int i = 0; i < 12; i++) {
+                j[i] &= d[i];
+            }
+        }
+        asm (
+        "vmovdqu (%2), %%ymm14 \n\t"
+        "vmovdqu 32(%2), %%ymm13 \n\t"
+        "vmovdqu (%0), %%ymm5 \n\t"
+        "vpsrld $1, %%ymm5, %%ymm0 \n\t"
+        "vpslld $1, %%ymm5, %%ymm1 \n\t"
+        "vpxor %%ymm0, %%ymm1, %%ymm6 \n\t"
+        "vpand %%ymm0, %%ymm1, %%ymm7 \n\t"
+        "vpand %%ymm5, %%ymm6, %%ymm1 \n\t"
+        "vpxor %%ymm5, %%ymm6, %%ymm6 \n\t"
+        "vpor %%ymm1, %%ymm7, %%ymm7 \n\t"
+        "vmovdqu 32(%0), %%xmm2 \n\t"
+        "vpsrld $1, %%xmm2, %%xmm0 \n\t"
+        "vpslld $1, %%xmm2, %%xmm1 \n\t"
+        "vpxor %%ymm0, %%ymm1, %%ymm3 \n\t"
+        "vpand %%ymm0, %%ymm1, %%ymm4 \n\t"
+        "vpand %%ymm2, %%ymm3, %%ymm1 \n\t"
+        "vpxor %%ymm2, %%ymm3, %%ymm3 \n\t"
+        "vpor %%ymm1, %%ymm4, %%ymm4 \n\t"
+        "vpblendd $1, %%ymm3, %%ymm6, %%ymm8 \n\t"
+        "vpblendd $1, %%ymm4, %%ymm7, %%ymm9 \n\t"
+        "vpblendd $3, %%ymm3, %%ymm6, %%ymm10 \n\t"
+        "vpblendd $3, %%ymm4, %%ymm7, %%ymm11 \n\t"
+        "vpblendd $1, %%ymm2, %%ymm5, %%ymm12 \n\t"
+        "vpermd %%ymm8, %%ymm13, %%ymm8 \n\t"
+        "vpermd %%ymm9, %%ymm13, %%ymm9 \n\t"
+        "vpermq $57, %%ymm10, %%ymm10 \n\t"
+        "vpermq $57, %%ymm11, %%ymm11 \n\t"
+        "vpermd %%ymm12, %%ymm13, %%ymm12 \n\t"
+        "vpxor %%ymm6, %%ymm8, %%ymm8 \n\t"
+        "vpxor %%ymm7, %%ymm9, %%ymm9 \n\t"
+        "vpxor %%ymm8, %%ymm10, %%ymm10 \n\t"
+        "vpxor %%ymm9, %%ymm11, %%ymm11 \n\t"
+        "vpor %%ymm8, %%ymm6, %%ymm6 \n\t"
+        "vpor %%ymm9, %%ymm7, %%ymm7 \n\t"
+        "vpand %%ymm10, %%ymm8, %%ymm8 \n\t"
+        "vpand %%ymm11, %%ymm9, %%ymm9 \n\t"
+        "vpandn %%ymm6, %%ymm8, %%ymm8 \n\t"
+        "vpandn %%ymm7, %%ymm9, %%ymm9 \n\t"
+#include "ll_avx2_b3s23.asm"
+        "vmovdqu %%ymm10, (%1) \n\t"
+        "vpblendd $1, %%ymm6, %%ymm3, %%ymm8 \n\t"
+        "vpblendd $1, %%ymm7, %%ymm4, %%ymm9 \n\t"
+        "vpblendd $3, %%ymm6, %%ymm3, %%ymm10 \n\t"
+        "vpblendd $3, %%ymm7, %%ymm4, %%ymm11 \n\t"
+        "vpblendd $1, %%ymm5, %%ymm2, %%ymm12 \n\t"
+        "vpermd %%ymm8, %%ymm13, %%ymm8 \n\t"
+        "vpermd %%ymm9, %%ymm13, %%ymm9 \n\t"
+        "vpermq $57, %%ymm10, %%ymm10 \n\t"
+        "vpermq $57, %%ymm11, %%ymm11 \n\t"
+        "vpermd %%ymm12, %%ymm13, %%ymm12 \n\t"
+        "vpxor %%ymm3, %%ymm8, %%ymm8 \n\t"
+        "vpxor %%ymm4, %%ymm9, %%ymm9 \n\t"
+        "vpxor %%ymm8, %%ymm10, %%ymm10 \n\t"
+        "vpxor %%ymm9, %%ymm11, %%ymm11 \n\t"
+        "vpor %%ymm8, %%ymm3, %%ymm3 \n\t"
+        "vpor %%ymm9, %%ymm4, %%ymm4 \n\t"
+        "vpand %%ymm10, %%ymm8, %%ymm8 \n\t"
+        "vpand %%ymm11, %%ymm9, %%ymm9 \n\t"
+        "vpandn %%ymm3, %%ymm8, %%ymm8 \n\t"
+        "vpandn %%ymm4, %%ymm9, %%ymm9 \n\t"
+#include "ll_avx2_b3s23.asm"
+        "vmovdqu %%xmm10, 32(%1) \n\t"
+                : /* no output operands */ 
+                : "r" (d), "r" (e), "r" (apg::__sixteen8)
+                : "ebx", "xmm0", "xmm1", "xmm2", "xmm3", "xmm4", 
+                    "xmm5", "xmm6", "xmm7", "xmm8", "xmm9", "xmm10", 
+                    "xmm11", "xmm12", "xmm13", "xmm14", "xmm15", "memory");
+
+        if (h) {
+            for (int i = 1; i < 11; i++) {
+                h[i] |= e[i-1];
+            }
+        }
+        if (j) {
+            for (int i = 1; i < 11; i++) {
+                j[i] &= e[i-1];
+            }
+        }
+        if (onegen) {
+            for (int i = 2; i < 10; i++) {
+                d[i] = e[i-1];
+            }
+            return false;
+        }
+        asm (
+        "vmovdqu (%2), %%ymm14 \n\t"
+        "vmovdqu 32(%2), %%ymm13 \n\t"
+        "vmovdqu (%1), %%ymm5 \n\t"
+        "vpsrld $1, %%ymm5, %%ymm0 \n\t"
+        "vpslld $1, %%ymm5, %%ymm1 \n\t"
+        "vpxor %%ymm0, %%ymm1, %%ymm6 \n\t"
+        "vpand %%ymm0, %%ymm1, %%ymm7 \n\t"
+        "vpand %%ymm5, %%ymm6, %%ymm1 \n\t"
+        "vpxor %%ymm5, %%ymm6, %%ymm6 \n\t"
+        "vpor %%ymm1, %%ymm7, %%ymm7 \n\t"
+        "vmovdqu 32(%1), %%xmm2 \n\t"
+        "vpsrld $1, %%xmm2, %%xmm0 \n\t"
+        "vpslld $1, %%xmm2, %%xmm1 \n\t"
+        "vpxor %%ymm0, %%ymm1, %%ymm3 \n\t"
+        "vpand %%ymm0, %%ymm1, %%ymm4 \n\t"
+        "vpand %%ymm2, %%ymm3, %%ymm1 \n\t"
+        "vpxor %%ymm2, %%ymm3, %%ymm3 \n\t"
+        "vpor %%ymm1, %%ymm4, %%ymm4 \n\t"
+        "vpblendd $1, %%ymm3, %%ymm6, %%ymm8 \n\t"
+        "vpblendd $1, %%ymm4, %%ymm7, %%ymm9 \n\t"
+        "vpblendd $3, %%ymm3, %%ymm6, %%ymm10 \n\t"
+        "vpblendd $3, %%ymm4, %%ymm7, %%ymm11 \n\t"
+        "vpblendd $1, %%ymm2, %%ymm5, %%ymm12 \n\t"
+        "vpermd %%ymm8, %%ymm13, %%ymm8 \n\t"
+        "vpermd %%ymm9, %%ymm13, %%ymm9 \n\t"
+        "vpermq $57, %%ymm10, %%ymm10 \n\t"
+        "vpermq $57, %%ymm11, %%ymm11 \n\t"
+        "vpermd %%ymm12, %%ymm13, %%ymm12 \n\t"
+        "vpxor %%ymm6, %%ymm8, %%ymm8 \n\t"
+        "vpxor %%ymm7, %%ymm9, %%ymm9 \n\t"
+        "vpxor %%ymm8, %%ymm10, %%ymm10 \n\t"
+        "vpxor %%ymm9, %%ymm11, %%ymm11 \n\t"
+        "vpor %%ymm8, %%ymm6, %%ymm6 \n\t"
+        "vpor %%ymm9, %%ymm7, %%ymm7 \n\t"
+        "vpand %%ymm10, %%ymm8, %%ymm8 \n\t"
+        "vpand %%ymm11, %%ymm9, %%ymm9 \n\t"
+        "vpandn %%ymm6, %%ymm8, %%ymm8 \n\t"
+        "vpandn %%ymm7, %%ymm9, %%ymm9 \n\t"
+#include "ll_avx2_b3s23.asm"
+        "vpand %%ymm14, %%ymm10, %%ymm10 \n\t"
+        "vmovdqu 8(%0), %%ymm8 \n\t"
+        "vpandn %%ymm8, %%ymm14, %%ymm11 \n\t"
+        "vpor %%ymm10, %%ymm11, %%ymm11 \n\t"
+        "vmovdqu %%ymm11, 8(%0) \n\t"
+        "vpxor %%ymm11, %%ymm8, %%ymm15 \n\t"
+        "vmovdqu %%ymm15, (%1) \n\t"
+                : /* no output operands */ 
+                : "r" (d), "r" (e), "r" (apg::__sixteen8)
+                : "ebx", "xmm0", "xmm1", "xmm2", "xmm3", "xmm4", 
+                    "xmm5", "xmm6", "xmm7", "xmm8", "xmm9", "xmm10", 
+                    "xmm11", "xmm12", "xmm13", "xmm14", "xmm15", "memory");
+
+        if (h) {
+            for (int i = 2; i < 10; i++) {
+                h[i] |= d[i];
+            }
+        }
+        if (j) {
+            for (int i = 2; i < 10; i++) {
+                j[i] &= d[i];
+            }
+        }
+        uint32_t bigdiff = e[8] | e[9] | e[10] | e[11] | e[12] | e[13] | e[14] | e[15];
+        if (diffs != 0) {
+        diffs[0] = bigdiff;
+        diffs[1] = e[0] | e[1];
+        diffs[2] = e[18] | e[19];
+        }
+        return (bigdiff == 0);
+    }
+
     int iterate_var_avx2(int n, uint32_t * __restrict__ d, uint32_t * __restrict__ h, uint32_t * __restrict__ j) {
         uint32_t e[32];
         if (n >= 7) { if (iterate_avx2_32_28(d, e, h, j, 0, (n == 7))) {return 8;} }
@@ -6072,103 +7815,6 @@ namespace b3s23 {
         return 0;
     }
 
-    bool iterate_var_leaf(int n, uint64_t * inleaves, uint64_t * outleaf) {
-        bool nochange = false;
-        int bis = apg::best_instruction_set();
-        uint32_t d[32];
-        if (bis >= 10) {
-            apg::z64_to_r32_avx2(inleaves, d);
-            nochange = (iterate_var_avx2(n, d) == n);
-            apg::r32_centre_to_z64_avx2(d, outleaf);
-        } else if (bis >= 9) {
-            apg::z64_to_r32_avx(inleaves, d);
-            nochange = (iterate_var_avx(n, d) == n);
-            apg::r32_centre_to_z64_avx(d, outleaf);
-        } else if (bis >= 7) {
-            apg::z64_to_r32_sse2(inleaves, d);
-            nochange = (iterate_var_sse2(n, d) == n);
-            apg::r32_centre_to_z64_sse4(d, outleaf);
-        } else {
-            apg::z64_to_r32_sse2(inleaves, d);
-            nochange = (iterate_var_sse2(n, d) == n);
-            apg::r32_centre_to_z64_ssse3(d, outleaf);
-        }
-        return nochange;
-    }
 
-    bool iterate_var_leaf(int n, uint64_t * inleaves, uint64_t * hleaves, uint64_t * outleaf) {
-        bool nochange = false;
-        int bis = apg::best_instruction_set();
-        uint32_t d[32];
-        uint32_t h[32];
-        if (bis >= 10) {
-            apg::z64_to_r32_avx2(inleaves, d);
-            apg::z64_to_r32_avx2(hleaves, h);
-            nochange = (iterate_var_avx2(n, d, h) == n);
-            apg::r32_centre_to_z64_avx2(d, outleaf);
-            apg::r32_centre_to_z64_avx2(h, outleaf + 4);
-        } else if (bis >= 9) {
-            apg::z64_to_r32_avx(inleaves, d);
-            apg::z64_to_r32_avx(hleaves, h);
-            nochange = (iterate_var_avx(n, d, h) == n);
-            apg::r32_centre_to_z64_avx(d, outleaf);
-            apg::r32_centre_to_z64_avx(h, outleaf + 4);
-        } else if (bis >= 7) {
-            apg::z64_to_r32_sse2(inleaves, d);
-            apg::z64_to_r32_sse2(hleaves, h);
-            nochange = (iterate_var_sse2(n, d, h) == n);
-            apg::r32_centre_to_z64_sse4(d, outleaf);
-            apg::r32_centre_to_z64_sse4(h, outleaf + 4);
-        } else {
-            apg::z64_to_r32_sse2(inleaves, d);
-            apg::z64_to_r32_sse2(hleaves, h);
-            nochange = (iterate_var_sse2(n, d, h) == n);
-            apg::r32_centre_to_z64_ssse3(d, outleaf);
-            apg::r32_centre_to_z64_ssse3(h, outleaf + 4);
-        }
-        return nochange;
-    }
-
-    bool iterate_var_leaf(int n, uint64_t * inleaves, uint64_t * hleaves, uint64_t * jleaves, uint64_t * outleaf) {
-        bool nochange = false;
-        int bis = apg::best_instruction_set();
-        uint32_t d[32];
-        uint32_t h[32];
-        uint32_t j[32];
-        if (bis >= 10) {
-            apg::z64_to_r32_avx2(inleaves, d);
-            apg::z64_to_r32_avx2(jleaves, j);
-            apg::z64_to_r32_avx2(hleaves, h);
-            nochange = (iterate_var_avx2(n, d, h, j) == n);
-            apg::r32_centre_to_z64_avx2(d, outleaf);
-            apg::r32_centre_to_z64_avx2(j, outleaf + 8);
-            apg::r32_centre_to_z64_avx2(h, outleaf + 4);
-        } else if (bis >= 9) {
-            apg::z64_to_r32_avx(inleaves, d);
-            apg::z64_to_r32_avx(jleaves, j);
-            apg::z64_to_r32_avx(hleaves, h);
-            nochange = (iterate_var_avx(n, d, h, j) == n);
-            apg::r32_centre_to_z64_avx(d, outleaf);
-            apg::r32_centre_to_z64_avx(j, outleaf + 8);
-            apg::r32_centre_to_z64_avx(h, outleaf + 4);
-        } else if (bis >= 7) {
-            apg::z64_to_r32_sse2(inleaves, d);
-            apg::z64_to_r32_sse2(jleaves, j);
-            apg::z64_to_r32_sse2(hleaves, h);
-            nochange = (iterate_var_sse2(n, d, h, j) == n);
-            apg::r32_centre_to_z64_sse4(d, outleaf);
-            apg::r32_centre_to_z64_sse4(j, outleaf + 8);
-            apg::r32_centre_to_z64_sse4(h, outleaf + 4);
-        } else {
-            apg::z64_to_r32_sse2(inleaves, d);
-            apg::z64_to_r32_sse2(jleaves, j);
-            apg::z64_to_r32_sse2(hleaves, h);
-            nochange = (iterate_var_sse2(n, d, h, j) == n);
-            apg::r32_centre_to_z64_ssse3(d, outleaf);
-            apg::r32_centre_to_z64_ssse3(j, outleaf + 8);
-            apg::r32_centre_to_z64_ssse3(h, outleaf + 4);
-        }
-        return nochange;
-    }
-
+#include "../leaf_iterators.h"
 }

@@ -1,6 +1,7 @@
 #pragma once
 #include <stdint.h>
 #include <cstring>
+#include <iostream>
 #include "lifeperm.h"
 #include "lifelogic/iterators_all.h"
 

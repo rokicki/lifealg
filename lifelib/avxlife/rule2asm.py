@@ -67,58 +67,6 @@ class iwriter:
             self.printinstr('movdqa %s, %s' % (i2, o1))
             self.printinstr('%s %s, %s' % (op, i1, o1))
 
-    def ntinit(self):
-        '''
-        Prepare lookup tables, masks, et cetera:
-        '''
-
-        regbytes = 32 if ('avx2' in self.iset) else 16
-        regname = '%%ymm' if ('avx2' in self.iset) else '%%xmm'
-        accessor = 'vmovdqu' if ('avx' in self.iset) else 'movups'
-        for i in xrange(8):
-            memloc = '(%2)' if (i == 0) else (str(32*i) + '(%2)')
-            self.printinstr('%s %s, %s' % (accessor, memloc, regname + str(i + 2)))
-        self.logicgate('pxor', 14, 14, 14)
-
-    def ntiter(self):
-        '''
-        Evaluates 16 or 32 cell-updates in 16 machine instructions (excluding
-        additional movdqa instructions emitted for SSE machines).
-
-        Assumes the following initial states:
-                  xmm0: bytes containing neighbour states (0..255);
-                  xmm1: bytes containing centre states (0..1);
-            xmm2..xmm7: lookup tables for pshufb;
-                  xmm8: uniform array containing 0x7f;
-                  xmm9: uniform array containing 0x70;
-                 xmm14: uniform array containing 0x00.
-
-        The output will be stored in xmm10. Register xmm0 is clobbered.
-        '''
-
-        self.logicgate('pshufb', 0, 2, 10)
-        self.logicgate('pshufb', 0, 3, 11)
-        self.logicgate('pand', 8, 0, 0)
-        self.logicgate('pshufb', 0, 4, 12)
-        self.logicgate('pshufb', 0, 5, 13)
-        self.logicgate('pxor', 12, 10, 10)
-        self.logicgate('pxor', 13, 11, 11)
-        self.logicgate('pand', 9, 0, 0)
-
-        regname = '%%ymm' if ('avx2' in self.iset) else '%%xmm'
-        if ('avx' in self.iset):
-            self.printinstr('vpsrld $3, %s0, %s0' % (regname, regname))
-        else:
-            self.printinstr('psrld $3, %s0' % regname)
-
-        self.logicgate('por', 1, 0, 0)
-        self.logicgate('pshufb', 0, 6, 12)
-        self.logicgate('pshufb', 0, 7, 13)
-        self.logicgate('pand', 12, 10, 10)
-        self.logicgate('pand', 13, 11, 11)
-        self.logicgate('por', 11, 10, 10)
-        self.logicgate('pcmpeqb', 14, 10, 10)
-
     def load_and_hshift(self, i, oddgen, terminal):
 
         regbytes = 32 if ('avx2' in self.iset) else 16
@@ -560,27 +508,6 @@ def gwli_bsi(f, bsi, msi):
     f.write('            apg::r32_centre_to_z64_%s(d, outleaf);\n' % msi)
     f.write('            apg::r32_centre_to_z64_%s(h, outleaf2);\n' % msi)
 
-def wli_bsi(f, hist, bsi, msi):
-
-    f.write('            apg::z64_to_r32_%s(inleaves, d);\n' % bsi)
-    if (hist >= 2):
-        f.write('            apg::z64_to_r32_%s(jleaves, j);\n' % bsi)
-    if (hist >= 1):
-        f.write('            apg::z64_to_r32_%s(hleaves, h);\n' % bsi)
-
-    if (hist >= 2):
-        f.write('            nochange = (iterate_var_%s(n, d, h, j) == n);\n' % bsi)
-    elif (hist >= 1):
-        f.write('            nochange = (iterate_var_%s(n, d, h) == n);\n' % bsi)
-    else:
-        f.write('            nochange = (iterate_var_%s(n, d) == n);\n' % bsi)
-
-    f.write('            apg::r32_centre_to_z64_%s(d, outleaf);\n' % msi)
-    if (hist >= 2):
-        f.write('            apg::r32_centre_to_z64_%s(j, outleaf + 8);\n' % msi)
-    if (hist >= 1):
-        f.write('            apg::r32_centre_to_z64_%s(h, outleaf + 4);\n' % msi)
-
 def write_all_iterators(f, hist, rules):
 
     params = 'int n, uint64_t * inleaves'
@@ -656,37 +583,6 @@ def write_all_iterators(f, hist, rules):
     f.write('        return -1;\n')
     f.write('    }\n\n')
 
-def write_leaf_iterator(f, hist):
-
-    name = 'iterate_var_leaf'
-    params = 'int n, uint64_t * inleaves'
-    if (hist):
-        params += ', uint64_t * hleaves'
-    if (hist >= 2):
-        params += ', uint64_t * jleaves'
-    params += ', uint64_t * outleaf'
-    f.write('    bool %s(%s) {\n' % (name, params))
-    f.write('        bool nochange = false;\n')
-    f.write('        int bis = apg::best_instruction_set();\n')
-    f.write('        uint32_t d[32];\n')
-
-    if (hist >= 1):
-        f.write('        uint32_t h[32];\n')
-    if (hist >= 2):
-        f.write('        uint32_t j[32];\n')
-
-    f.write('        if (bis >= 10) {\n')
-    wli_bsi(f, hist, 'avx2', 'avx2')
-    f.write('        } else if (bis >= 9) {\n')
-    wli_bsi(f, hist, 'avx', 'avx')
-    f.write('        } else if (bis >= 7) {\n')
-    wli_bsi(f, hist, 'sse2', 'sse4')
-    f.write('        } else {\n')
-    wli_bsi(f, hist, 'sse2', 'ssse3')
-    f.write('        }\n')
-    f.write('        return nochange;\n')
-    f.write('    }\n\n')
-
 def gwrite_leaf_iterator(f, nstates):
 
     name = 'iterate_var_leaf'
@@ -753,12 +649,6 @@ def makeiso(rulestring):
         os.makedirs('lifelogic')
 
     logstring = rulestring[rulestring.index('b'):]
-    '''
-    for iset in [['sse2'], ['sse2', 'avx'], ['sse2', 'avx', 'avx2']]:
-        with open(('lifelogic/llma_%s.asm' % iset[-1]), 'w') as f:
-            ix = iwriter(f, iset)
-            ix.isogen()
-    '''
 
     with open('lifelogic/iterators_%s.h' % rulestring, 'w') as f:
         f.write('#pragma once\n')
@@ -791,14 +681,6 @@ def makeasm(rulestring):
         f.write('#include "../eors.h"\n')
         f.write('namespace %s {\n\n' % rulestring.replace('-', '_'))
 
-        '''
-        for (x, y) in [(28, '0x3ffffffcu'), (24, '0x0ffffff0u'), (20, '0x03ffffc0u'), (16, '0x00ffff00u')]:
-            f.write('    const static uint32_t __sixteen%d[] __attribute__((aligned(64))) = {' % x)
-            for i in xrange(8):
-                f.write('%s,\n        ' % y)
-            f.write('1, 2, 3, 4, 5, 6, 7, 0};\n\n')
-        '''
-
         for iset in [['sse2'], ['sse2', 'avx'], ['sse2', 'avx', 'avx2']]:
             iw = iwriter(f, iset)
             if (rulestring[0] == 'g'):
@@ -809,13 +691,14 @@ def makeasm(rulestring):
                 iw.write_function(rulestring, 28, 24)
                 iw.write_function(rulestring, 24, 20)
                 iw.write_function(rulestring, 20, 16)
+                iw.write_function(rulestring, 16, 12)
+                iw.write_function(rulestring, 12, 8)
                 iw.write_iterator()
 
         if (rulestring[0] == 'g'):
             gwrite_leaf_iterator(f, int(rulestring[1:rulestring.index('b')]))
         else:
-            for hist in xrange(3):
-                write_leaf_iterator(f, hist)
+            f.write('\n#include "../leaf_iterators.h"\n')
         f.write('}\n')
 
 def main():
@@ -833,7 +716,7 @@ def main():
         print("python rule2asm.py b3s23 b38s23 g4b2s345")
         exit(1)
     if (len(rules) > 8):
-        print("apglib supports a maximum of 8 different rules")
+        print("lifelib supports a maximum of 8 different rules")
         exit(1)
 
     for rulestring in rules:

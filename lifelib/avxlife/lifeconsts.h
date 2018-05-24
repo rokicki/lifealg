@@ -43,5 +43,23 @@ namespace apg {
         0x00ffff00u,
         1, 2, 3, 4, 5, 6, 7, 0};
 
+    const static uint32_t __sixteen12[] __attribute__((aligned(64))) = {0x003ffc00u,
+        0x003ffc00u,
+        0x003ffc00u,
+        0x003ffc00u,
+        0x003ffc00u,
+        0x003ffc00u,
+        0x003ffc00u,
+        0x003ffc00u,
+        1, 2, 3, 4, 5, 6, 7, 0};
 
+    const static uint32_t __sixteen8[] __attribute__((aligned(64))) = {0x000ff000u,
+        0x000ff000u,
+        0x000ff000u,
+        0x000ff000u,
+        0x000ff000u,
+        0x000ff000u,
+        0x000ff000u,
+        0x000ff000u,
+        1, 2, 3, 4, 5, 6, 7, 0};
 }

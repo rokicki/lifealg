@@ -12,11 +12,13 @@
 
 namespace apg {
 
-    template<typename I, int N>
-    class lifetree : public lifetree_abstract<I> {
+    template<typename I, int N, typename J>
+    class lifetree_generic : public lifetree_abstract<I> {
 
         public:
-        hypertree<I, 4, lifemeta<I>, nicearray<uint64_t, 4*N>, lifemeta<I> > htree;
+        hypertree<I, 4, J, nicearray<uint64_t, 4*N>, J > htree;
+
+        using lifetree_abstract<I>::breach;
 
         uint64_t countlayers() {
             return N;
@@ -48,27 +50,16 @@ namespace apg {
 
         uint64_t total_bytes() { return htree.total_bytes(); }
         void force_gc() { htree.gc_full(); }
-        bool threshold_gc(uint64_t threshold) {
-            if (threshold) {
-                uint64_t oldsize = htree.total_bytes();
-                if (oldsize >= threshold) {
-                    // std::cerr << "Performing garbage collection (" << oldsize << " >= " << threshold << ")" << std::endl;
-                    htree.gc_full();
-                    // std::cerr << "Size reduced from " << oldsize << " to " << htree.total_bytes() << " bytes." << std::endl;
-                    return true;
-                }
-            }
-            return false;
-        }
+        virtual bool threshold_gc(uint64_t threshold) = 0;
 
         uint64_t counthandles() {
             return htree.ihandles.size() + htree.handles.size();
         }
 
-        kiventry<nicearray<I, 4>, I, lifemeta<I> >* ind2ptr_nonleaf(uint32_t depth, I index) {
+        kiventry<nicearray<I, 4>, I, J >* ind2ptr_nonleaf(uint32_t depth, I index) {
             return htree.ind2ptr_nonleaf(depth, index);
         }
-        kiventry<nicearray<uint64_t, 4*N>, I, lifemeta<I> >* ind2ptr_leaf(I index) {
+        kiventry<nicearray<uint64_t, 4*N>, I, J >* ind2ptr_leaf(I index) {
             return htree.ind2ptr_leaf(index);
         }
         I make_nonleaf(uint32_t depth, nicearray<I, 4> contents) {
@@ -88,128 +79,11 @@ namespace apg {
         }
 
         uint64_t leafpart(I index, uint32_t part) {
-            kiventry<nicearray<uint64_t, 4*N>, I, lifemeta<I> >* pptr = ind2ptr_leaf(index);
+            kiventry<nicearray<uint64_t, 4*N>, I, J >* pptr = ind2ptr_leaf(index);
             if (part < 4*N) { return pptr->key.x[part]; } else { return 0; }
         }
 
-        hypernode<I> iterate_recurse(hypernode<I> hnode, uint64_t mantissa, uint64_t exponent, int rule, int history) {
-            /*
-            * Given a 2^n-by-2^n square represented by a hypernode, return the
-            * central 2^(n-1)-by-2^(n-1) subsquare advanced by M * (2 ** E)
-            * generations.
-            *
-            * This uses Gosper's HashLife algorithm down to a base-case where
-            * n = 5 (i.e. computing the 16-by-16 interior of a 32-by-32 grid)
-            * is performed by vectorised bitsliced assembly code.
-            */
-
-            // std::cerr << "Calling iterate_recurse((" << hnode.index << ", " << hnode.depth << "), ";
-            // std::cerr << mantissa << ", " << exponent << ", " << rule << ", " << history << ")" << std::endl;
-
-            if (hnode.index == 0) {
-
-                // Node is empty; return an empty node of the next size down:
-                return hypernode<I>(0, hnode.depth - 1);
-
-            }
-
-            // Extract the pointer to the node:
-            kiventry<nicearray<I, 4>, I, lifemeta<I> >* pptr = ind2ptr_nonleaf(hnode.depth, hnode.index);
-
-            // Determine whether 1 or 2 stages are necessary:
-            bool bothstages = (hnode.depth <= (1 + exponent));
-
-            // Return the result if we've previously cached it:
-            uint64_t gcdesc = pptr->gcflags >> 9;
-            uint64_t hrule = (rule << 1) + (history & 1);
-            if ((gcdesc & 7) == (mantissa - 1) && (hrule == ((gcdesc >> 3) & 15))) {
-                uint64_t gcexp = gcdesc >> 7;
-                if (gcexp == (1 + exponent) || (bothstages && (gcexp >= hnode.depth))) {
-                    // The exponent and mantissa are compatible with their desired values:
-                    return hypernode<I>(pptr->value.res, hnode.depth - 1);
-                }
-            }
-
-            if (hnode.depth == 1) {
-
-                // Set up the memory locations:
-                nicearray<uint64_t, 4*N> outleaf = {0ull};
-
-                uint64_t* inleafxs[4];
-
-                for (int i = 0; i < 4; i++) {
-                    inleafxs[i] = ind2ptr_leaf(pptr->key.x[i])->key.x;
-                }
-
-                universal_leaf_iterator<N>(rule, history, mantissa, inleafxs, outleaf.x);
-
-                I finalnode = make_leaf(outleaf);
-
-                if (mantissa != 0) {
-                    // Cache the result to save additional recomputation:
-                    pptr->value.res = finalnode;
-                    uint64_t new_gcdesc = ((1 + exponent) << 7) | (hrule << 3) | (mantissa - 1);
-                    pptr->gcflags = (pptr->gcflags & 511) | (new_gcdesc << 9);
-                }
-
-                // Return the result:
-                return hypernode<I>(finalnode, 0);
-
-            } else {
-
-                // Extract the pointers for the children:
-                kiventry<nicearray<I, 4>, I, lifemeta<I> >* pptr_tl = ind2ptr_nonleaf(hnode.depth-1, pptr->key.x[0]);
-                kiventry<nicearray<I, 4>, I, lifemeta<I> >* pptr_tr = ind2ptr_nonleaf(hnode.depth-1, pptr->key.x[1]);
-                kiventry<nicearray<I, 4>, I, lifemeta<I> >* pptr_bl = ind2ptr_nonleaf(hnode.depth-1, pptr->key.x[2]);
-                kiventry<nicearray<I, 4>, I, lifemeta<I> >* pptr_br = ind2ptr_nonleaf(hnode.depth-1, pptr->key.x[3]);
-
-                // Determine the centre square and return if (mantissa == 0):
-                nicearray<I, 4> cc = {pptr_tl->key.x[3], pptr_tr->key.x[2], pptr_bl->key.x[1], pptr_br->key.x[0]};
-                hypernode<I>  hncc = make_nonleaf_hn(hnode.depth-1, cc);
-                if (mantissa == 0) { return hncc; }
-
-                // Actual HashLife algorithm begins here:
-                nicearray<I, 4> tc = {pptr_tl->key.x[1], pptr_tr->key.x[0], pptr_tl->key.x[3], pptr_tr->key.x[2]};
-                nicearray<I, 4> bc = {pptr_bl->key.x[1], pptr_br->key.x[0], pptr_bl->key.x[3], pptr_br->key.x[2]};
-                nicearray<I, 4> cl = {pptr_tl->key.x[2], pptr_tl->key.x[3], pptr_bl->key.x[0], pptr_bl->key.x[1]};
-                nicearray<I, 4> cr = {pptr_tr->key.x[2], pptr_tr->key.x[3], pptr_br->key.x[0], pptr_br->key.x[1]};
-
-                // Compute the nine subnodes after the first stage:
-                uint64_t newmant = bothstages ? mantissa : 0;
-                hypernode<I>   xcc = iterate_recurse(hncc, newmant, exponent, rule, history);
-                hypernode<I>   xtc = iterate_recurse(make_nonleaf_hn(hnode.depth - 1, tc), newmant, exponent, rule, history);
-                hypernode<I>   xbc = iterate_recurse(make_nonleaf_hn(hnode.depth - 1, bc), newmant, exponent, rule, history);
-                hypernode<I>   xcl = iterate_recurse(make_nonleaf_hn(hnode.depth - 1, cl), newmant, exponent, rule, history);
-                hypernode<I>   xcr = iterate_recurse(make_nonleaf_hn(hnode.depth - 1, cr), newmant, exponent, rule, history);
-                hypernode<I>   xtl = iterate_recurse(hypernode<I>(pptr->key.x[0], hnode.depth - 1), newmant, exponent, rule, history);
-                hypernode<I>   xtr = iterate_recurse(hypernode<I>(pptr->key.x[1], hnode.depth - 1), newmant, exponent, rule, history);
-                hypernode<I>   xbl = iterate_recurse(hypernode<I>(pptr->key.x[2], hnode.depth - 1), newmant, exponent, rule, history);
-                hypernode<I>   xbr = iterate_recurse(hypernode<I>(pptr->key.x[3], hnode.depth - 1), newmant, exponent, rule, history);
-
-                // Compute the four subnodes after the second stage:
-                nicearray<I, 4> tl = {xtl.index, xtc.index, xcl.index, xcc.index};
-                nicearray<I, 4> tr = {xtc.index, xtr.index, xcc.index, xcr.index};
-                nicearray<I, 4> bl = {xcl.index, xcc.index, xbl.index, xbc.index};
-                nicearray<I, 4> br = {xcc.index, xcr.index, xbc.index, xbr.index};
-                hypernode<I>   ytl = iterate_recurse(make_nonleaf_hn(hnode.depth - 1, tl), mantissa, exponent, rule, history);
-                hypernode<I>   ytr = iterate_recurse(make_nonleaf_hn(hnode.depth - 1, tr), mantissa, exponent, rule, history);
-                hypernode<I>   ybl = iterate_recurse(make_nonleaf_hn(hnode.depth - 1, bl), mantissa, exponent, rule, history);
-                hypernode<I>   ybr = iterate_recurse(make_nonleaf_hn(hnode.depth - 1, br), mantissa, exponent, rule, history);
-
-                // Assemble the four subnodes and calculate the result:
-                nicearray<I, 4> y = {ytl.index, ytr.index, ybl.index, ybr.index};
-                I finalnode = make_nonleaf(hnode.depth - 1, y);
-
-                // Cache the result to save additional recomputation:
-                pptr->value.res = finalnode;
-                uint64_t new_gcdesc = ((1 + exponent) << 7) | (hrule << 3) | (mantissa - 1);
-                pptr->gcflags = (pptr->gcflags & 511) | (new_gcdesc << 9);
-
-                // Return the result:
-                return hypernode<I>(finalnode, hnode.depth - 1);
-            }
-
-        }
+        virtual hypernode<I> iterate_recurse(hypernode<I> hnode, uint64_t mantissa, uint64_t exponent, int rule, int history) = 0;
 
         uint64_t write_macrocell_leaf(std::ostream &outstream, uint64_t leaf,
                                      std::map<uint64_t, uint64_t> *subleaf2int,
@@ -251,7 +125,7 @@ namespace apg {
                 return it->second;
             } else if (hnode.depth == 0) {
                 // Extract the pointer to the node:
-                kiventry<nicearray<uint64_t, 4*N>, I, lifemeta<I> >* pptr = ind2ptr_leaf(hnode.index);
+                kiventry<nicearray<uint64_t, 4*N>, I, J >* pptr = ind2ptr_leaf(hnode.index);
                 uint64_t a = write_macrocell_leaf(outstream, pptr->key.x[0], subleaf2int, linenum);
                 uint64_t b = write_macrocell_leaf(outstream, pptr->key.x[1], subleaf2int, linenum);
                 uint64_t c = write_macrocell_leaf(outstream, pptr->key.x[2], subleaf2int, linenum);
@@ -276,7 +150,7 @@ namespace apg {
             std::map<uint64_t, uint64_t> subleaf2int;
             std::map<std::pair<I, uint32_t>, uint64_t> hnode2int;
             uint64_t linenum = 0;
-            write_macrocell_recurse(outstream, hnode, &subleaf2int, &hnode2int, linenum);
+            write_macrocell_recurse(outstream, breach(hnode), &subleaf2int, &hnode2int, linenum);
         }
 
         hypernode<I> read_macrocell(std::istream &instream, std::map<uint64_t, uint64_t> *lmap, std::string &rule) {
@@ -418,7 +292,7 @@ namespace apg {
             if (hnode.index == 0) {
                 return 0;
             } else if (hnode.depth == 0) {
-                kiventry<nicearray<uint64_t, 4*N>, I, lifemeta<I> >* pptr = ind2ptr_leaf(hnode.index);
+                kiventry<nicearray<uint64_t, 4*N>, I, J >* pptr = ind2ptr_leaf(hnode.index);
                 uint64_t c = 0;
                 for (unsigned int i = 0; i < N; i++) {
                     uint64_t rel = pptr->key.x[4*i + ((y & 8) >> 2) + ((x & 8) >> 3)];
@@ -446,7 +320,11 @@ namespace apg {
             * so as to clear the memoized population counts.
             */
 
-            if (hnode.index == 0) {
+            if (hnode.index2 != 0) {
+
+                return getpop_recurse(breach(hnode), modprime, layermask);
+
+            } else if (hnode.index == 0) {
 
                 // Empty nodes have population 0:
                 return 0;
@@ -454,7 +332,7 @@ namespace apg {
             } else if (hnode.depth == 0) {
 
                 // This is a leaf node (16-by-16 square); extract its memory location:
-                kiventry<nicearray<uint64_t, 4*N>, I, lifemeta<I> >* pptr = ind2ptr_leaf(hnode.index);
+                kiventry<nicearray<uint64_t, 4*N>, I, J >* pptr = ind2ptr_leaf(hnode.index);
 
                 if (pptr->gcflags & 1) {
                     // We've cached the population; return it:
@@ -483,7 +361,7 @@ namespace apg {
             } else {
 
                 // Non-leaf node (32-by-32 or larger):
-                kiventry<nicearray<I, 4>, I, lifemeta<I> >* pptr = ind2ptr_nonleaf(hnode.depth, hnode.index);
+                kiventry<nicearray<I, 4>, I, J >* pptr = ind2ptr_nonleaf(hnode.depth, hnode.index);
                 I oldflags = pptr->gcflags;
 
                 // Determine whether our cached value for the population is correct.
@@ -524,13 +402,17 @@ namespace apg {
 
         uint64_t bound_recurse(hypernode<I> hnode, int direction, std::map<std::pair<I, uint32_t>, uint64_t> *memmap) {
 
+            if (hnode.index2 != 0) {
+                return bound_recurse(breach(hnode), direction, memmap);
+            }
+
             uint64_t z = (direction & 2) ? 0 : (16 << hnode.depth);
             auto it = memmap->find(std::make_pair(hnode.index, hnode.depth));
 
             if (it != memmap->end()) {
                 return it->second;
             } else if (hnode.depth == 0) {
-                kiventry<nicearray<uint64_t, 4*N>, I, lifemeta<I> >* pptr = ind2ptr_leaf(hnode.index);
+                kiventry<nicearray<uint64_t, 4*N>, I, J >* pptr = ind2ptr_leaf(hnode.index);
                 uint64_t tilea = 0;
                 uint64_t tileb = 0;
                 if (direction & 1) {
@@ -679,6 +561,10 @@ namespace apg {
             * Recursively copy a structure from one lifetree to another.
             */
 
+            if (hnode.index2 != 0) {
+                return copy_recurse(breach(hnode), lab, memmap);
+            }
+
             auto it = memmap->find(std::make_pair(hnode.index, hnode.depth));
 
             if (hnode.index == 0) {
@@ -711,6 +597,10 @@ namespace apg {
 
             if (N == 1) { return hnode; }
 
+            if (hnode.index2 != 0) {
+                return brand_recurse(breach(hnode), memmap);
+            }
+
             auto it = memmap->find(std::make_pair(hnode.index, hnode.depth));
 
             if (hnode.index == 0) {
@@ -719,7 +609,7 @@ namespace apg {
                 return hypernode<I>(it->second, hnode.depth);
             } else if (hnode.depth == 0) {
                 // Extract the pointer to the node:
-                kiventry<nicearray<uint64_t, 4*N>, I, lifemeta<I> >* pptr = ind2ptr_leaf(hnode.index);
+                kiventry<nicearray<uint64_t, 4*N>, I, J >* pptr = ind2ptr_leaf(hnode.index);
                 nicearray<uint64_t, 4*N> outleaf = {0ull};
 
                 for (int j = 0; j < 4; j++) {
@@ -733,7 +623,7 @@ namespace apg {
                 return hypernode<I>(res, 0);
             } else {
                 // Extract the pointer to the node:
-                kiventry<nicearray<I, 4>, I, lifemeta<I> >* pptr = ind2ptr_nonleaf(hnode.depth, hnode.index);
+                kiventry<nicearray<I, 4>, I, J >* pptr = ind2ptr_nonleaf(hnode.depth, hnode.index);
 
                 // Lazy evaluation:
                 hypernode<I> ytl = brand_recurse(hypernode<I>(pptr->key.x[0], hnode.depth - 1), memmap);
@@ -752,6 +642,10 @@ namespace apg {
 
         hypernode<I> transform_recurse(hypernode<I> hnode, uint8_t perm, std::map<std::pair<I, uint32_t>, I> *memmap) {
             
+            if (hnode.index2 != 0) {
+                return transform_recurse(breach(hnode), perm, memmap);
+            }
+
             auto it = memmap->find(std::make_pair(hnode.index, hnode.depth));
 
             if (hnode.index == 0) {
@@ -760,7 +654,7 @@ namespace apg {
                 return hypernode<I>(it->second, hnode.depth);
             } else if (hnode.depth == 0) {
                 // Extract the pointer to the node:
-                kiventry<nicearray<uint64_t, 4*N>, I, lifemeta<I> >* pptr = ind2ptr_leaf(hnode.index);
+                kiventry<nicearray<uint64_t, 4*N>, I, J >* pptr = ind2ptr_leaf(hnode.index);
 
                 nicearray<uint64_t, 4*N> outleaf = {0ull};
                 for (int i = 0; i < N; i++) {
@@ -774,7 +668,7 @@ namespace apg {
                 return hypernode<I>(res, 0);
             } else {
                 // Extract the pointer to the node:
-                kiventry<nicearray<I, 4>, I, lifemeta<I> >* pptr = ind2ptr_nonleaf(hnode.depth, hnode.index);
+                kiventry<nicearray<I, 4>, I, J >* pptr = ind2ptr_nonleaf(hnode.depth, hnode.index);
 
                 // Lazy evaluation:
                 hypernode<I> ytl = transform_recurse(hypernode<I>(pptr->key.x[perm & 3], hnode.depth - 1), perm, memmap);
@@ -792,6 +686,10 @@ namespace apg {
 
         hypernode<I> shift_recurse(hypernode<I> hnode, uint64_t x, uint64_t y, uint64_t exponent, std::map<std::pair<I, uint32_t>, I> *memmap) {
 
+            if (hnode.index2 != 0) {
+                return shift_recurse(breach(hnode), x, y, exponent, memmap);
+            }
+
             auto it = memmap->find(std::make_pair(hnode.index, hnode.depth));
 
             if (hnode.index == 0) {
@@ -801,7 +699,7 @@ namespace apg {
             } else {
 
                 // Extract the pointer to the node:
-                kiventry<nicearray<I, 4>, I, lifemeta<I> >* pptr = ind2ptr_nonleaf(hnode.depth, hnode.index);
+                kiventry<nicearray<I, 4>, I, J >* pptr = ind2ptr_nonleaf(hnode.depth, hnode.index);
 
                 if (hnode.depth + 2 < exponent) {
 
@@ -819,10 +717,10 @@ namespace apg {
                     uint64_t ty = (y >> bs) & 1;
 
                     // Extract the pointers for the children:
-                    kiventry<nicearray<I, 4>, I, lifemeta<I> >* pptr_tl = ind2ptr_nonleaf(hnode.depth-1, pptr->key.x[0]);
-                    kiventry<nicearray<I, 4>, I, lifemeta<I> >* pptr_tr = ind2ptr_nonleaf(hnode.depth-1, pptr->key.x[1]);
-                    kiventry<nicearray<I, 4>, I, lifemeta<I> >* pptr_bl = ind2ptr_nonleaf(hnode.depth-1, pptr->key.x[2]);
-                    kiventry<nicearray<I, 4>, I, lifemeta<I> >* pptr_br = ind2ptr_nonleaf(hnode.depth-1, pptr->key.x[3]);
+                    kiventry<nicearray<I, 4>, I, J >* pptr_tl = ind2ptr_nonleaf(hnode.depth-1, pptr->key.x[0]);
+                    kiventry<nicearray<I, 4>, I, J >* pptr_tr = ind2ptr_nonleaf(hnode.depth-1, pptr->key.x[1]);
+                    kiventry<nicearray<I, 4>, I, J >* pptr_bl = ind2ptr_nonleaf(hnode.depth-1, pptr->key.x[2]);
+                    kiventry<nicearray<I, 4>, I, J >* pptr_br = ind2ptr_nonleaf(hnode.depth-1, pptr->key.x[3]);
 
                     hypernode<I> xtl, xtr, xbl, xbr;
 
@@ -930,65 +828,77 @@ namespace apg {
             *   3 = andn
             */
 
-            auto it = memmap->find(std::make_pair(std::make_pair(lnode.index, rnode.index), lnode.depth));
-
-            if (lnode.index == 0) {
+            if ((lnode.index == 0) && (lnode.index2 == 0)) {
                 if (operation == 0 || operation == 3) {
                     return lnode;
                 } else {
                     return rnode;
                 }
-            } else if (rnode.index == 0) {
+            } else if ((rnode.index == 0) && (rnode.index2 == 0)) {
                 if (operation == 0) {
                     return rnode;
                 } else {
                     return lnode;
                 }
-            } else if (it != memmap->end()) {
-                return hypernode<I>(it->second, lnode.depth);
-            } else if (lnode.depth >= 1){
-                kiventry<nicearray<I, 4>, I, lifemeta<I> >* lptr = ind2ptr_nonleaf(lnode.depth, lnode.index);
-                kiventry<nicearray<I, 4>, I, lifemeta<I> >* rptr = ind2ptr_nonleaf(rnode.depth, rnode.index);
-                hypernode<I> ytl = boolean_recurse(hypernode<I>(lptr->key.x[0], lnode.depth-1), hypernode<I>(rptr->key.x[0], rnode.depth-1),
-                                                    operation, memmap);
-                hypernode<I> ytr = boolean_recurse(hypernode<I>(lptr->key.x[1], lnode.depth-1), hypernode<I>(rptr->key.x[1], rnode.depth-1),
-                                                    operation, memmap);
-                hypernode<I> ybl = boolean_recurse(hypernode<I>(lptr->key.x[2], lnode.depth-1), hypernode<I>(rptr->key.x[2], rnode.depth-1),
-                                                    operation, memmap);
-                hypernode<I> ybr = boolean_recurse(hypernode<I>(lptr->key.x[3], lnode.depth-1), hypernode<I>(rptr->key.x[3], rnode.depth-1),
-                                                    operation, memmap);
-                nicearray<I, 4> cc = {ytl.index, ytr.index, ybl.index, ybr.index};
-                hypernode<I> xcc = make_nonleaf_hn(lnode.depth, cc);
-                memmap->emplace(std::make_pair(std::make_pair(lnode.index, rnode.index), lnode.depth), xcc.index);
-                return xcc;
+            } else if ((rnode.index2 != 0) || (lnode.index2 != 0)) {
+                return boolean_recurse(breach(lnode), breach(rnode), operation, memmap);
             } else {
-                kiventry<nicearray<uint64_t, 4*N>, I, lifemeta<I> >* lptr = ind2ptr_leaf(lnode.index);
-                kiventry<nicearray<uint64_t, 4*N>, I, lifemeta<I> >* rptr = ind2ptr_leaf(rnode.index);
-                nicearray<uint64_t, 4*N> outleaf = {0ull};
-                if (operation == 0) {
-                    for (int i = 0; i < 4*N; i++) {
-                        outleaf.x[i] = lptr->key.x[i] & rptr->key.x[i];
-                    }
-                } else if (operation == 1) {
-                    for (int i = 0; i < 4*N; i++) {
-                        outleaf.x[i] = lptr->key.x[i] | rptr->key.x[i];
-                    }
-                } else if (operation == 2) {
-                    for (int i = 0; i < 4*N; i++) {
-                        outleaf.x[i] = lptr->key.x[i] ^ rptr->key.x[i];
-                    }
+                // Both operands are nonzero, so we need to actually compute
+                // the result recursively. Firstly, we check to see whether
+                // the result has already been computed and cached:
+                auto it = memmap->find(std::make_pair(std::make_pair(lnode.index, rnode.index), lnode.depth));
+                if (it != memmap->end()) {
+                    return hypernode<I>(it->second, lnode.depth);
+                } else if (lnode.depth >= 1){
+                    // Nonleaf node:
+                    kiventry<nicearray<I, 4>, I, J >* lptr = ind2ptr_nonleaf(lnode.depth, lnode.index);
+                    kiventry<nicearray<I, 4>, I, J >* rptr = ind2ptr_nonleaf(rnode.depth, rnode.index);
+                    hypernode<I> ytl = boolean_recurse(hypernode<I>(lptr->key.x[0], lnode.depth-1), hypernode<I>(rptr->key.x[0], rnode.depth-1),
+                                                        operation, memmap);
+                    hypernode<I> ytr = boolean_recurse(hypernode<I>(lptr->key.x[1], lnode.depth-1), hypernode<I>(rptr->key.x[1], rnode.depth-1),
+                                                        operation, memmap);
+                    hypernode<I> ybl = boolean_recurse(hypernode<I>(lptr->key.x[2], lnode.depth-1), hypernode<I>(rptr->key.x[2], rnode.depth-1),
+                                                        operation, memmap);
+                    hypernode<I> ybr = boolean_recurse(hypernode<I>(lptr->key.x[3], lnode.depth-1), hypernode<I>(rptr->key.x[3], rnode.depth-1),
+                                                        operation, memmap);
+                    nicearray<I, 4> cc = {ytl.index, ytr.index, ybl.index, ybr.index};
+                    hypernode<I> xcc = make_nonleaf_hn(lnode.depth, cc);
+                    memmap->emplace(std::make_pair(std::make_pair(lnode.index, rnode.index), lnode.depth), xcc.index);
+                    return xcc;
                 } else {
-                    for (int i = 0; i < 4*N; i++) {
-                        outleaf.x[i] = lptr->key.x[i] & ~(rptr->key.x[i]);
+                    // Leaf node:
+                    kiventry<nicearray<uint64_t, 4*N>, I, J >* lptr = ind2ptr_leaf(lnode.index);
+                    kiventry<nicearray<uint64_t, 4*N>, I, J >* rptr = ind2ptr_leaf(rnode.index);
+                    nicearray<uint64_t, 4*N> outleaf = {0ull};
+                    if (operation == 0) {
+                        for (int i = 0; i < 4*N; i++) {
+                            outleaf.x[i] = lptr->key.x[i] & rptr->key.x[i];
+                        }
+                    } else if (operation == 1) {
+                        for (int i = 0; i < 4*N; i++) {
+                            outleaf.x[i] = lptr->key.x[i] | rptr->key.x[i];
+                        }
+                    } else if (operation == 2) {
+                        for (int i = 0; i < 4*N; i++) {
+                            outleaf.x[i] = lptr->key.x[i] ^ rptr->key.x[i];
+                        }
+                    } else {
+                        for (int i = 0; i < 4*N; i++) {
+                            outleaf.x[i] = lptr->key.x[i] & ~(rptr->key.x[i]);
+                        }
                     }
+                    I res = make_leaf(outleaf);
+                    memmap->emplace(std::make_pair(std::make_pair(lnode.index, rnode.index), 0), res);
+                    return hypernode<I>(res, 0);
                 }
-                I res = make_leaf(outleaf);
-                memmap->emplace(std::make_pair(std::make_pair(lnode.index, rnode.index), 0), res);
-                return hypernode<I>(res, 0);
             }
         }
 
         uint64_t digest_recurse(hypernode<I> hnode, std::map<std::pair<I, uint32_t>, uint64_t> *memmap) {
+
+            if (hnode.index2 != 0) {
+                return digest_recurse(breach(hnode), memmap);
+            }
 
             auto it = memmap->find(std::make_pair(hnode.index, hnode.depth));
             if (hnode.index == 0) {
@@ -997,13 +907,13 @@ namespace apg {
                 return it->second;
             } else if (hnode.depth == 0) {
                 // This is a leaf node (16-by-16 square); extract its memory location:
-                kiventry<nicearray<uint64_t, 4*N>, I, lifemeta<I> >* pptr = ind2ptr_leaf(hnode.index);
+                kiventry<nicearray<uint64_t, 4*N>, I, J >* pptr = ind2ptr_leaf(hnode.index);
                 uint64_t h = pptr->key.hash();
                 memmap->emplace(std::make_pair(hnode.index, hnode.depth), h);
                 return h;
             } else {
                 // Extract the pointer to the node:
-                kiventry<nicearray<I, 4>, I, lifemeta<I> >* pptr = ind2ptr_nonleaf(hnode.depth, hnode.index);
+                kiventry<nicearray<I, 4>, I, J >* pptr = ind2ptr_nonleaf(hnode.depth, hnode.index);
 
                 // Lazy evaluation:
                 uint64_t a = digest_recurse(hypernode<I>(pptr->key.x[0], hnode.depth - 1), memmap) + 314159;
@@ -1048,8 +958,8 @@ namespace apg {
             } else if (it != memmap2->end()) {
                 return hypernode<I>(it->second, lnode.depth + 1);
             } else if (lnode.depth >= 1) {
-                kiventry<nicearray<I, 4>, I, lifemeta<I> >* lptr = ind2ptr_nonleaf(lnode.depth, lnode.index);
-                kiventry<nicearray<I, 4>, I, lifemeta<I> >* rptr = ind2ptr_nonleaf(rnode.depth, rnode.index);
+                kiventry<nicearray<I, 4>, I, J >* lptr = ind2ptr_nonleaf(lnode.depth, lnode.index);
+                kiventry<nicearray<I, 4>, I, J >* rptr = ind2ptr_nonleaf(rnode.depth, rnode.index);
 
                 hypernode<I> pconvs[4][4];
                 for (int c = 0; c < 4; c++) {
@@ -1067,7 +977,7 @@ namespace apg {
                                                           hypernode<I>(rptr->key.x[j], rnode.depth-1),
                                                           exclusive, memmap1, memmap2);
                         if (q.index) {
-                            kiventry<nicearray<I, 4>, I, lifemeta<I> >* qptr = ind2ptr_nonleaf(q.depth, q.index);
+                            kiventry<nicearray<I, 4>, I, J >* qptr = ind2ptr_nonleaf(q.depth, q.index);
                             for (int k = 0; k < 4; k++) {
                                 hypernode<I> hijk = hypernode<I>(qptr->key.x[k], lnode.depth-1);
                                 int a = (i & 1) + (j & 1) + (k & 1);
@@ -1096,8 +1006,8 @@ namespace apg {
             } else {
                 // lnode and rnode are depth-0. As always, base cases are more
                 // annoying than the recursion:
-                kiventry<nicearray<uint64_t, 4*N>, I, lifemeta<I> >* lptr = ind2ptr_leaf(lnode.index);
-                kiventry<nicearray<uint64_t, 4*N>, I, lifemeta<I> >* rptr = ind2ptr_leaf(rnode.index);
+                kiventry<nicearray<uint64_t, 4*N>, I, J >* lptr = ind2ptr_leaf(lnode.index);
+                kiventry<nicearray<uint64_t, 4*N>, I, J >* rptr = ind2ptr_leaf(rnode.index);
 
                 nicearray<uint64_t, 4*N> outleaves[4];
 
@@ -1204,7 +1114,7 @@ namespace apg {
             return str;
         }
 
-        std::string _string32(hypernode<I> hnode) { return string_recurse(hnode); }
+        std::string _string32(hypernode<I> hnode) { return string_recurse(breach(hnode)); }
 
         hypernode<I> _string32(std::string s) {
             uint64_t loc = 0;
@@ -1214,10 +1124,12 @@ namespace apg {
         }
 
         void bitworld_recurse(hypernode<I> hnode, bitworld* bw, uint32_t layer, int32_t x, int32_t y) {
-            if (hnode.index == 0) {
+            if (hnode.index2 != 0) {
+                bitworld_recurse(breach(hnode), bw, layer, x, y);
+            } else if (hnode.index == 0) {
                 return;
             } else if (hnode.depth == 0) {
-                kiventry<nicearray<uint64_t, 4*N>, I, lifemeta<I> >* pptr = ind2ptr_leaf(hnode.index);
+                kiventry<nicearray<uint64_t, 4*N>, I, J >* pptr = ind2ptr_leaf(hnode.index);
                 bw->world.emplace(std::pair<int32_t, int32_t>(x, y), pptr->key.x[4*layer]);
                 bw->world.emplace(std::pair<int32_t, int32_t>(x+1, y), pptr->key.x[4*layer+1]);
                 bw->world.emplace(std::pair<int32_t, int32_t>(x, y+1), pptr->key.x[4*layer+2]);
@@ -1266,10 +1178,238 @@ namespace apg {
             }
         }
 
+        hypernode<I> pyramid_up(hypernode<I> hnode) {
+
+            if (hnode.index2 != 0) {
+                hypernode<I> i1 = pyramid_up(hypernode<I>(hnode.index,  hnode.depth));
+                hypernode<I> i2 = pyramid_up(hypernode<I>(hnode.index2, hnode.depth));
+                return hypernode<I>(i1.index, i2.index, i1.depth);
+            }
+
+            I z = 0;
+
+            if (hnode.depth == 0) {
+                nicearray<I, 4> cc = {z, z, z, hnode.index};
+                hypernode<I> hnode2 = make_nonleaf_hn(hnode.depth + 1, cc);
+                return this->shift_toroidal(hnode2, -1, -1, 3);
+            } else {
+                kiventry<nicearray<I, 4>, I, J >* pptr = ind2ptr_nonleaf(hnode.depth, hnode.index);
+                nicearray<I, 4> tl = {z, z, z, pptr->key.x[0]};
+                nicearray<I, 4> tr = {z, z, pptr->key.x[1], z};
+                nicearray<I, 4> bl = {z, pptr->key.x[2], z, z};
+                nicearray<I, 4> br = {pptr->key.x[3], z, z, z};
+                nicearray<I, 4> nc = {make_nonleaf(hnode.depth, tl),
+                                      make_nonleaf(hnode.depth, tr),
+                                      make_nonleaf(hnode.depth, bl),
+                                      make_nonleaf(hnode.depth, br)};
+                return make_nonleaf_hn(hnode.depth + 1, nc);
+            }
+        }
+
+        hypernode<I> pyramid_down(hypernode<I> hnode) {
+
+            if (hnode.depth <= 1) { return hnode; }
+
+            if (hnode.index2 != 0) {
+                hypernode<I> i1 = pyramid_down(hypernode<I>(hnode.index,  hnode.depth));
+                hypernode<I> i2 = pyramid_down(hypernode<I>(hnode.index2, hnode.depth));
+                while (i1.depth < i2.depth) { i1 = pyramid_up(i1); }
+                while (i2.depth < i1.depth) { i2 = pyramid_up(i2); }
+                return hypernode<I>(i1.index, i2.index, i1.depth);
+            }
+
+            if (hnode.index == 0) { return hypernode<I>(0, 1); }
+
+            // Extract the pointer for the node and its children:
+            kiventry<nicearray<I, 4>, I, J >* pptr = ind2ptr_nonleaf(hnode.depth, hnode.index);
+            kiventry<nicearray<I, 4>, I, J >* pptr_tl = ind2ptr_nonleaf(hnode.depth-1, pptr->key.x[0]);
+            kiventry<nicearray<I, 4>, I, J >* pptr_tr = ind2ptr_nonleaf(hnode.depth-1, pptr->key.x[1]);
+            kiventry<nicearray<I, 4>, I, J >* pptr_bl = ind2ptr_nonleaf(hnode.depth-1, pptr->key.x[2]);
+            kiventry<nicearray<I, 4>, I, J >* pptr_br = ind2ptr_nonleaf(hnode.depth-1, pptr->key.x[3]);
+
+            bool tl_good = (pptr_tl->key.x[0] == 0) && (pptr_tl->key.x[1] == 0) && (pptr_tl->key.x[2] == 0);
+            bool tr_good = (pptr_tr->key.x[0] == 0) && (pptr_tr->key.x[1] == 0) && (pptr_tr->key.x[3] == 0);
+            bool bl_good = (pptr_bl->key.x[0] == 0) && (pptr_bl->key.x[2] == 0) && (pptr_bl->key.x[3] == 0);
+            bool br_good = (pptr_br->key.x[1] == 0) && (pptr_br->key.x[2] == 0) && (pptr_br->key.x[3] == 0);
+
+            if (tl_good && tr_good && bl_good && br_good) {
+                nicearray<I, 4> cc = {pptr_tl->key.x[3], pptr_tr->key.x[2], pptr_bl->key.x[1], pptr_br->key.x[0]};
+                hypernode<I>  hncc = make_nonleaf_hn(hnode.depth-1, cc);
+                // Do this recursively:
+                return pyramid_down(hncc);
+            } else {
+                return hnode;
+            }
+        }
+
+        nicearray<I, 9> ninechildren(hypernode<I> hnode) {
+            
+            // Extract the pointer to the node:
+            auto pptr = ind2ptr_nonleaf(hnode.depth, hnode.index);
+
+            // Extract the pointers for the children:
+            kiventry<nicearray<I, 4>, I, J >* pptr_tl = ind2ptr_nonleaf(hnode.depth-1, pptr->key.x[0]);
+            kiventry<nicearray<I, 4>, I, J >* pptr_tr = ind2ptr_nonleaf(hnode.depth-1, pptr->key.x[1]);
+            kiventry<nicearray<I, 4>, I, J >* pptr_bl = ind2ptr_nonleaf(hnode.depth-1, pptr->key.x[2]);
+            kiventry<nicearray<I, 4>, I, J >* pptr_br = ind2ptr_nonleaf(hnode.depth-1, pptr->key.x[3]);
+            nicearray<I, 4> cc = {pptr_tl->key.x[3], pptr_tr->key.x[2], pptr_bl->key.x[1], pptr_br->key.x[0]};
+            nicearray<I, 4> tc = {pptr_tl->key.x[1], pptr_tr->key.x[0], pptr_tl->key.x[3], pptr_tr->key.x[2]};
+            nicearray<I, 4> bc = {pptr_bl->key.x[1], pptr_br->key.x[0], pptr_bl->key.x[3], pptr_br->key.x[2]};
+            nicearray<I, 4> cl = {pptr_tl->key.x[2], pptr_tl->key.x[3], pptr_bl->key.x[0], pptr_bl->key.x[1]};
+            nicearray<I, 4> cr = {pptr_tr->key.x[2], pptr_tr->key.x[3], pptr_br->key.x[0], pptr_br->key.x[1]};
+
+            nicearray<I, 9> res = {pptr->key.x[0], make_nonleaf(hnode.depth - 1, tc), pptr->key.x[1],
+                make_nonleaf(hnode.depth - 1, cl), make_nonleaf(hnode.depth - 1, cc), make_nonleaf(hnode.depth - 1, cr),
+                                   pptr->key.x[2], make_nonleaf(hnode.depth - 1, bc), pptr->key.x[3]};
+
+            return res;
+            
+        }
+
+        nicearray<I, 4> fourchildren(hypernode<I> hnode, nicearray<I, 9> frags) {
+
+            auto fragments = frags.x;
+
+            nicearray<I, 4> tl = {fragments[0], fragments[1], fragments[3], fragments[4]};
+            nicearray<I, 4> tr = {fragments[1], fragments[2], fragments[4], fragments[5]};
+            nicearray<I, 4> bl = {fragments[3], fragments[4], fragments[6], fragments[7]};
+            nicearray<I, 4> br = {fragments[4], fragments[5], fragments[7], fragments[8]};
+
+            nicearray<I, 4> res = {make_nonleaf(hnode.depth - 1, tl), make_nonleaf(hnode.depth - 1, tr),
+                                   make_nonleaf(hnode.depth - 1, bl), make_nonleaf(hnode.depth - 1, br)};
+
+            return res;
+
+        }
+
+        hypernode<I> iterate_recurse1(hypernode<I> hnode, uint64_t mantissa, uint64_t exponent, int rule, int history) {
+            /*
+            * Given a 2^n-by-2^n square represented by a hypernode, return the
+            * central 2^(n-1)-by-2^(n-1) subsquare advanced by M * (2 ** E)
+            * generations.
+            *
+            * This uses Gosper's HashLife algorithm down to a base-case where
+            * n = 5 (i.e. computing the 16-by-16 interior of a 32-by-32 grid)
+            * is performed by vectorised bitsliced assembly code.
+            */
+
+            // std::cerr << "Calling iterate_recurse((" << hnode.index << ", " << hnode.depth << "), ";
+            // std::cerr << mantissa << ", " << exponent << ", " << rule << ", " << history << ")" << std::endl;
+
+            if (hnode.index == 0) {
+
+                // Node is empty; return an empty node of the next size down:
+                return hypernode<I>(0, hnode.depth - 1);
+
+            }
+
+            // Extract the pointer to the node:
+            kiventry<nicearray<I, 4>, I, J >* pptr = ind2ptr_nonleaf(hnode.depth, hnode.index);
+
+            // Determine whether 1 or 2 stages are necessary:
+            bool bothstages = (hnode.depth <= (1 + exponent));
+
+            // Return the result if we've previously cached it:
+            uint64_t gcdesc = pptr->gcflags >> 9;
+            uint64_t hrule = (rule << 1) + (history & 1);
+            if ((gcdesc & 7) == (mantissa - 1) && (hrule == ((gcdesc >> 3) & 15))) {
+                uint64_t gcexp = gcdesc >> 7;
+                if (gcexp == (1 + exponent) || (bothstages && (gcexp >= hnode.depth))) {
+                    // The exponent and mantissa are compatible with their desired values:
+                    return hypernode<I>(pptr->value.res, hnode.depth - 1);
+                }
+            }
+
+            if (hnode.depth == 1) {
+
+                // Set up the memory locations:
+                nicearray<uint64_t, 4*N> outleaf = {0ull};
+
+                uint64_t* inleafxs[4];
+
+                for (int i = 0; i < 4; i++) {
+                    inleafxs[i] = ind2ptr_leaf(pptr->key.x[i])->key.x;
+                }
+
+                universal_leaf_iterator<N>(rule, history, mantissa, inleafxs, outleaf.x);
+
+                I finalnode = make_leaf(outleaf);
+
+                if (mantissa != 0) {
+                    // Cache the result to save additional recomputation:
+                    pptr->value.res = finalnode;
+                    uint64_t new_gcdesc = ((1 + exponent) << 7) | (hrule << 3) | (mantissa - 1);
+                    pptr->gcflags = (pptr->gcflags & 511) | (new_gcdesc << 9);
+                }
+
+                // Return the result:
+                return hypernode<I>(finalnode, 0);
+
+            } else {
+
+                auto ch9 = ninechildren(hnode);
+                if (mantissa == 0) { return hypernode<I>(ch9.x[4], hnode.depth - 1); }
+                uint64_t newmant = bothstages ? mantissa : 0;
+
+                for (uint64_t i = 0; i < 9; i++) {
+                    auto fh = iterate_recurse1(hypernode<I>(ch9.x[i], hnode.depth - 1), newmant, exponent, rule, history);
+                    ch9.x[i] = fh.index;
+                }
+
+                auto ch4 = fourchildren(hnode, ch9);
+
+                for (uint64_t i = 0; i < 4; i++) {
+                    auto fh = iterate_recurse1(hypernode<I>(ch4.x[i], hnode.depth - 1), mantissa, exponent, rule, history);
+                    ch4.x[i] = fh.index;
+                }
+
+                I finalnode = make_nonleaf(hnode.depth - 1, ch4);
+
+                // Cache the result to save additional recomputation:
+                pptr->value.res = finalnode;
+                uint64_t new_gcdesc = ((1 + exponent) << 7) | (hrule << 3) | (mantissa - 1);
+                pptr->gcflags = (pptr->gcflags & 511) | (new_gcdesc << 9);
+
+                // Return the result:
+                return hypernode<I>(finalnode, hnode.depth - 1);
+            }
+
+        }
+
+
+    };
+
+    template<typename I, int N, typename J = lifemeta<I> >
+    class lifetree : public lifetree_generic<I, N, J> {
+
+        public:
+
+        using lifetree_generic<I, N, J>::iterate_recurse;
+        using lifetree_generic<I, N, J>::iterate_recurse1;
+
         lifetree(uint64_t maxmem) {
             // maxmem is specified in MiB, so we left-shift by 20:
             this->gc_threshold = maxmem << 20;
         }
+
+        hypernode<I> iterate_recurse(hypernode<I> hnode, uint64_t mantissa, uint64_t exponent, int rule, int history) {
+            return iterate_recurse1(hnode, mantissa, exponent, rule, history);
+        }
+
+        bool threshold_gc(uint64_t threshold) {
+            if (threshold) {
+                uint64_t oldsize = this->htree.total_bytes();
+                if (oldsize >= threshold) {
+                    // std::cerr << "Performing garbage collection (" << oldsize << " >= " << threshold << ")" << std::endl;
+                    this->htree.gc_full();
+                    // std::cerr << "Size reduced from " << oldsize << " to " << htree.total_bytes() << " bytes." << std::endl;
+                    return true;
+                }
+            }
+            return false;
+        }
+
     };
+
 
 }

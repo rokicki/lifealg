@@ -34,16 +34,31 @@ namespace apg {
     template<typename I>
     struct hypernode {
         I index;
+        I index2;
         uint32_t depth;
+
+        hypernode(I index, I index2, uint32_t depth) {
+            this->index = index;
+            this->index2 = index2;
+            this->depth = depth;
+        }
 
         hypernode(I index, uint32_t depth) {
             this->index = index;
+            this->index2 = 0;
             this->depth = depth;
         }
 
         hypernode() {
             this->index = -1;
+            this->index2 = 0;
             this->depth = 0;
+        }
+
+        bool empty() const { return ((index == 0) && (index2 == 0)); }
+        bool nonempty() const { return ((index != 0) || (index2 != 0)); }
+        bool operator==(const hypernode<I> &other) const {
+            return ((depth == other.depth) && (index == other.index) && (index2 == other.index2));
         }
     };
 
@@ -104,7 +119,11 @@ namespace apg {
 
         // Recursively mark node to rescue it from garbage-collection:
         I gc_mark(hypernode<I> parent) {
-            if (parent.index == 0 || parent.index == ((I) -1)) {
+            if (parent.index2 != 0) {
+                gc_mark(hypernode<I>(parent.index2, parent.depth));
+                gc_mark(hypernode<I>(parent.index, parent.depth));
+                return 0;
+            } else if (parent.index == 0 || parent.index == ((I) -1)) {
                 return 0;
             } else if (parent.depth == 0) {
                 kiventry<LK, I, LV>* pptr = leaves.ind2ptr(parent.index);
